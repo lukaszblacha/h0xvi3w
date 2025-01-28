@@ -1,0 +1,66 @@
+.main-menu {
+  --color-menu-item-bg: #343536;
+  --color-menu-item-active-bg: #303132;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 2px 8px;
+  font-family: "courier";
+
+  .item, .submenu {
+    border: solid 1px transparent;
+  }
+
+  .submenu {
+    display: none;
+    flex-direction: column;
+    gap: 1px;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: -1px;
+    min-width: 100px;
+    overflow: hidden;
+  }
+
+  input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+}
+
+.menu {
+  .item {
+    background-color: var(--color-menu-item-bg);
+    padding: .2ch .5ch;
+    line-height: 1.3em;
+    position: relative;
+
+    &:focus .submenu, .submenu:hover {
+      display: flex;
+      z-index: 1;
+    }
+  }
+}
+
+/* Fancy stuff */
+.main-menu {
+  background-color: var(--color-menu-item-bg);
+
+  .submenu, .item {
+    border-radius: 3px;
+  }
+
+  .item:focus, .item:hover {
+    outline: none;
+    border-color: #10111280;
+    background-color: #202122;
+  }
+
+  .submenu {
+    background-color: var(--color-menu-item-bg);
+    border-color: var(--color-menu-item-bg);
+    box-shadow: 0 1px 5px #10111280;
+  }
+}

@@ -1,0 +1,15 @@
+::highlight(selection), ::highlight(selection) {
+  background-color: #FFA50080;
+}
+
+::highlight(red) {
+  background-color: #f003;
+}
+
+::highlight(green) {
+  background-color: #0f03;
+}
+
+::highlight(blue) {
+  background-color: #00f3;
+}

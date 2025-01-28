@@ -1,0 +1,68 @@
+.editor {
+  flex-grow: 0;
+  & > * {
+    display: flex;
+
+    .spacer {
+      width: 15px;
+      flex: 0 0 1;
+    }
+
+    .grow {
+      flex-grow: 1;
+    }
+  }
+
+  .panel-header {
+    .col-hex {
+      letter-spacing: calc(1ch + 2 * var(--hex-letter-spacing));
+    }  
+  }
+
+  .panel-body {
+    flex-direction: row;
+    flex-grow: 1;
+    overflow-y: auto;
+
+    *::selection {
+      background-color: transparent;
+    }
+
+    .col-hex {
+      letter-spacing: var(--hex-letter-spacing);
+    }  
+
+    [contenteditable] {
+      outline: none;
+      caret-color: #FF0000;
+      background-color: inherit;
+      color: inherit;
+      border: none;
+      resize: none;
+      font: inherit;
+      flex-grow: 0;
+    }
+  }
+
+  .panel-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 50px;
+    width: 100%;
+
+    & > * {
+      flex-shrink: 0;
+    }
+  }
+
+  .col-index {
+    text-align: right;
+    white-space: pre;
+    color: var(--color-mild-text);
+  }
+
+  .col-ascii {
+    overflow-wrap: anywhere;
+    line-break: anywhere;
+  }
+}

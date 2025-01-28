@@ -1,0 +1,29 @@
+.panel {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  justify-content: stretch;
+  border: solid 1px var(--color-mild-text);
+  border-radius: 0.3em;
+  line-height: 20px;
+  font-size: 18px;
+
+  .panel-header, .panel-body, .panel-footer {
+    padding: .2ch 1ch;
+  }
+
+  .panel-header {
+    color: var(--color-mild-text);
+    border-bottom: solid 1px;
+  }
+
+  .panel-body {
+    flex-grow: 1;
+    flex-basis: 0;
+  }
+
+  .panel-footer {
+    color: var(--color-mild-text);
+    border-top: solid 1px;
+  }
+}
