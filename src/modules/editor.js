@@ -1,14 +1,15 @@
-import { $div, bindAll, unbindAll } from "../dom.js";
+import { $div, bindAll } from "../dom.js";
 import { $panel } from "../components/panel.js";
-import { highlight, range } from "../highlight.js";
+import { highlight, range, replaceInText, setCaret, setSelection } from "../text.js";
 
 const displayValue = (num) =>
   `${num.toString(16).toUpperCase()}h (${num.toString()})`;
 
 export const isPrintableCharacter = (i) => i >= 0x20 && i < 0x7f;
 const hexToU8 = (s) => parseInt(s, 16);
+const charToU8 = (c) => c.charCodeAt(0);
 const u8ToChar = (i) => isPrintableCharacter(i) ? String.fromCharCode(i) : '·';
-const char2U8 = (c) => c.charCodeAt(0);
+const u8ToHex = (i) => i.toString(16).padStart(2, "0");
 
 export const $editor = (lineWidth = 16) => {
   const headerText = Array(lineWidth).fill(0).fill(0).map((_, i) => i.toString(16)).join("").toUpperCase();
@@ -48,31 +49,59 @@ export const $editor = (lineWidth = 16) => {
   const [$index, $hex, $text] = $element.querySelectorAll(".panel-body > :not(.spacer)");
   const [$pos, $val, $size] = $element.querySelectorAll(".panel-footer > *");
 
-  let pos1, pos2 = 0;
-  let data = new Uint8Array([]);
+  let selectionStartOffset =0;
+  let selectionEndOffset = 0;
+  let buffer = new Uint8Array([]);
   
   let handlers = {
     select: [],
-    load: []
+    load: [],
+    change: []
   };
 
-  const setCursor = (p1, p2 = p1) => {
-    pos1 = Math.min(p1, p2);
-    pos2 = Math.max(p1, p2);
-    $pos.innerText = data.length ? `pos: ${displayValue(pos1)}` : "";
-    $val.innerText = data.length && pos1 < data.length ? (
-      pos2 !== pos1 ? `sel: ${displayValue(pos2 - pos1)}` : `val: ${displayValue(data[pos1])}`
+  function trigger(eventName, event = {}) {
+    handlers[eventName].forEach(callback => callback({ eventName, ...event }));
+  }
+
+  function updateSelection(selectionStart, selectionEnd = selectionStart) {
+    selectionStartOffset = Math.min(selectionStart, selectionEnd);
+    selectionEndOffset = Math.max(selectionStart, selectionEnd);
+    $pos.innerText = buffer.length ? `pos: ${displayValue(selectionStartOffset)}` : "";
+    $val.innerText = buffer.length && selectionStartOffset < buffer.length ? (
+      selectionEndOffset !== selectionStartOffset ? `sel: ${displayValue(selectionEndOffset - selectionStartOffset)}` : `val: ${displayValue(buffer[selectionStartOffset])}`
     ) : "";
 
     highlight("selection", [
-      [$hex.firstChild, pos1 * 2, pos2 * 2],
-      [$text.firstChild, pos1, pos2]
+      range($hex.firstChild, selectionStartOffset * 2, selectionEndOffset * 2),
+      range($text.firstChild, selectionStartOffset, selectionEndOffset)
     ]);
 
-    handlers.select.forEach(f => f(data, pos1, pos2));
+    trigger("select", {
+      buffer,
+      startOffset: selectionStartOffset,
+      endOffset: selectionEndOffset,
+      length: Math.abs(selectionEndOffset - selectionStartOffset),
+    })
+  }
+
+  function editBuffer(startOffset, endOffset, chunk) {
+    // TODO: when implementing the insert mode (as opposed to overwrite), [startOffset..endOffset] with the chunk
+    chunk.forEach((v, index) => {
+      buffer[startOffset + index] = v;
+    });
+
+    replaceInText($text.firstChild, chunk.map(u8ToChar).join(""), startOffset);
+    replaceInText($hex.firstChild, chunk.map(u8ToHex).join(""), startOffset * 2);
+
+    trigger("change", { buffer, startOffset, length: chunk.length });
   }
 
   function onBeforeInput(e) {
+    const s = document.getSelection();
+    const { baseOffset, extentOffset, baseNode, extentNode } = s;
+    e.preventDefault();
+    if (baseNode !== extentNode) return;
+
     switch (e.inputType) {
       case "insertFromDrop":
       case "insertFromPaste":
@@ -80,15 +109,27 @@ export const $editor = (lineWidth = 16) => {
         switch(e.target) {
           case $hex: {
             if(!e.data.match(/^[0-9a-f]*$/i)) {
-              e.preventDefault();
               return;
             }
+
+            const bufferOffset = Math.floor(baseOffset / 2);
+            let hexChunk = e.data;
+            // TODO: make these transformations using bit operations, not string concatenation
+            if (baseOffset % 2 !== 0) {
+              hexChunk = `${u8ToHex(buffer[bufferOffset])[0]}${hexChunk}`;
+            }
+            if (hexChunk.length % 2 !== 0) {
+              hexChunk = `${hexChunk}${u8ToHex(buffer[bufferOffset + Math.floor(e.data.length / 2)])[1]}`;
+            }
+
+            editBuffer(Math.floor(baseOffset / 2), Math.floor(extentOffset / 2), hexChunk.match(/.{2}/g).map(hexToU8));
+            setCaret($hex.firstChild, baseOffset + e.data.length);
+            break;
           }
           case $text: {
-            if (!new Array(e.data.length).fill(null).map((_, i) => e.data.charCodeAt(i)).every(isPrintableCharacter)) {
-              e.preventDefault();
-              return;
-            }
+            editBuffer(baseOffset, extentOffset, e.data.split("").map(charToU8));
+            setCaret($text.firstChild, baseOffset + e.data.length)
+            break;
           }
         }
         return;
@@ -103,69 +144,9 @@ export const $editor = (lineWidth = 16) => {
       case "historyUndo":
       case "historyRedo":
       default: {
-        e.preventDefault();
         alert("Unknown input type", e.inputType);
         console.log("Unknown input type", e);
       }
-    }
-  }
-
-  function onHexInput(e) {
-    let r = window.getSelection().getRangeAt(0).cloneRange();
-    const $node = r.startContainer;
-
-    if (e.data) {  
-      r = range($node, r.startOffset, r.startOffset + e.data.length);
-      r.deleteContents();
-
-      const dataIndex = Math.floor((r.startOffset - e.data.length) / 2);
-      let fragmentLength = e.data.length + (r.startOffset % 2) + (r.startOffset - e.data.length) % 2;
-      r = range(
-        $node,
-        dataIndex * 2,
-        dataIndex * 2 + fragmentLength // overflow?
-      );
-
-      const val = r.toString().match(/.{2}/g).map(hexToU8);
-
-      val.forEach((i, offset) => {
-        data[dataIndex + offset] = i;
-      });
-
-      r = range($text.firstChild, dataIndex, dataIndex + fragmentLength / 2);
-      // TODO:
-      // r.deleteContents(); ??? replace 
-      // $text[r.startOffset / 2] = u8ToChar(val);
-
-    } else {
-      throw new Error("TODO: Deletion not implemented");
-    }
-  }
-
-  function onTextInput(e) {
-    let r = window.getSelection().getRangeAt(0).cloneRange();
-    const $node = r.startContainer;
-
-    if (e.data) { 
-      r = range($node, r.startOffset, r.startOffset + e.data.length);
-      r.deleteContents();
-
-      const dataIndex = r.startOffset - e.data.length;
-      r = range($node, dataIndex, dataIndex + e.data.length);
-
-      const val = r.toString().split("").map(char2U8);
-
-      val.forEach((i, offset) => {
-        data[dataIndex + offset] = i;
-      });
-
-      r = range($hex.firstChild, dataIndex * 2, dataIndex * 2 + e.data.length * 2);
-      // TODO:
-      // r.deleteContents(); ??? replace 
-      // $hex[r.startOffset / 2] = u8ToChar(val);
-      handlers.load.forEach(f => f(data));
-    } else {
-      throw new Error("TODO: Deletion not implemented");
     }
   }
 
@@ -178,47 +159,46 @@ export const $editor = (lineWidth = 16) => {
     }
 
     if (baseNode === $hex.firstChild) {
-      setCursor(Math.floor(baseOffset / 2), Math.floor(extentOffset / 2));
+      updateSelection(Math.floor(baseOffset / 2), Math.floor(extentOffset / 2));
     } else if (baseNode === $text.firstChild) {
-      setCursor(baseOffset, extentOffset);
+      updateSelection(baseOffset, extentOffset);
     }
   }
 
+  bindAll($hex, { beforeinput: onBeforeInput });
+  bindAll($text, { beforeinput: onBeforeInput });
+
   return {
     $element,
-    on: (event, handler) => handlers[event].push(handler),
-    off: (event, handler) => handlers[event].filter(v => v !== handler),
-    setSelection: (pos1, pos2 = pos1) => {
-      const selection = document.getSelection();
-      selection.empty();
-      selection.addRange(range($text.firstChild, pos1, pos2));
-      $body.scrollTop = Math.floor(pos1 / lineWidth) * 20; // TODO: use line-height
+    on(event, handler) {
+      handlers[event].push(handler);
     },
-    setData: (newData) => { // Takes Uint8Array
+    off(event, handler) {
+      handlers[event] = handlers[event].filter(v => v !== handler);
+    },
+    setSelection(startOffset, endOffset = startOffset) {
+      setSelection($text.firstChild, startOffset, endOffset);
+      // TODO: read line-height from the DOM
+      $body.scrollTop = Math.floor(startOffset / lineWidth) * 20;
+    },
+    setBuffer(buf) {
+      buffer = buf;
       document.removeEventListener('selectionchange', onSelectionChange);
-      unbindAll($hex, { beforeinput: onBeforeInput, input: onHexInput });
-      unbindAll($text, { beforeinput: onBeforeInput, input: onTextInput });
 
-      data = newData;
-      const hex = [], text = [];
-      data.forEach(i => {
-        hex.push(i.toString(16).padStart(2, '0'));
-        text.push(u8ToChar(i));
-      });
-      $size.innerText = `size: ${displayValue(data.length)}`;
+      const hex = Array.from(buffer).map(u8ToHex);
+      const text = Array.from(buffer).map(u8ToChar);
+      $size.innerText = `size: ${displayValue(buffer.length)}`;
       $hex.innerText = hex.join("");
       $text.innerText = text.join("");
-      $index.innerText = new Array(Math.ceil(data.length / lineWidth)).fill(0)
+      $index.innerText = new Array(Math.ceil(buffer.length / lineWidth)).fill(0)
         .map((_, i) => (i * lineWidth)
           .toString(16)
           .padStart(6, 0))
         .join("\n");
 
-      bindAll($hex, { beforeinput: onBeforeInput, input: onHexInput });
-      bindAll($text, { beforeinput: onBeforeInput, input: onTextInput });
       document.addEventListener('selectionchange', onSelectionChange);
-      handlers.load.forEach(f => f(data));
-      setCursor(0);
+      trigger("load", { buffer })
+      setSelection($text.firstChild, 0);
     }
   };
 }

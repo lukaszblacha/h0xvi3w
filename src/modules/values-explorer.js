@@ -1,7 +1,7 @@
 import { $div, $table, $td, $tr } from "../dom.js";
 import { $panel } from "../components/panel.js";
 
-export const $valuesExplorer = (lineWidth = 16) => {
+export const $valuesExplorer = (editor) => {
   let value = [];
   let bigEndian = true;
   let $body = $div();
@@ -12,9 +12,11 @@ export const $valuesExplorer = (lineWidth = 16) => {
     body: [$body],
   }, { class: "values-explorer" });
 
-  const formatBinValue = () => value[0]?.toString(2).padStart(8, "0") ?? "◌";
+  function formatBinValue() {
+    return value[0]?.toString(2).padStart(8, "0") ?? "◌";
+  }
   
-  const formatInt = (bits, signed) => {
+  function formatInt(bits, signed) {
     let numChars = Math.round(bits / 8);
     if (value.length < numChars) {
       return "◌";
@@ -30,13 +32,18 @@ export const $valuesExplorer = (lineWidth = 16) => {
       val = BigInt(-(2 ** bits)) + val;
     }
     return val;
-  };
+  }
+
+  function formatChar() {
+    return value.length > 0 ? `"${String.fromCharCode(value[0]).charAt(0)}" ${value[0].toString(16).padStart(2,0)}h` : "◌";
+  }
 
   const render = () => {
     $body.innerText = "";
 
     const table = $table({}, [
       ["bin", formatBinValue()],
+      ["chr", formatChar()],
       ["i8", formatInt(8, true)],
       ["u8", formatInt(8, false)],
       ["i16", formatInt(16, true)],
@@ -53,18 +60,21 @@ export const $valuesExplorer = (lineWidth = 16) => {
     $body.appendChild(table);
   }
 
+  function setValue({ buffer, startOffset }) {
+    cancelAnimationFrame(afRid)
+    value = buffer.slice(startOffset, startOffset + 8);
+    afRid = requestAnimationFrame(render);
+  }
+
+  editor.on("select", setValue);
+
   return {
     $element,
-    setBigEndian: (v) => {
+    setBigEndian(v) {
       if (v !== bigEndian) {
         bigEndian = v;
         setValue(value);
       }
     },
-    setValue: (newValue, index) => { // Takes Uint8Array of size 0-128?
-      cancelAnimationFrame(afRid)
-      value = newValue.slice(index, index + 8);
-      afRid = requestAnimationFrame(render);
-    }
   };
 }

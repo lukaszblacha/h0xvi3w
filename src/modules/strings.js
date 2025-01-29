@@ -1,4 +1,4 @@
-import { $button, $div, $input, bindAll } from "../dom.js";
+import { $div, $input, bindAll } from "../dom.js";
 import { $panel } from "../components/panel.js";
 import { $split } from "../components/split.js";
 
@@ -54,13 +54,16 @@ export const $strings = (editor) => {
   bindAll($minLength, { change: onSearchTermChange });
   bindAll($caseInsensitive, { change: onSearchTermChange });
 
-  const setData = (data) => { // Takes Uint8Array
-    strArray = getStrings(data);
-    $search.value = "";
+  function parseStrings(buffer) {
+    strArray = getStrings(buffer);
     afRid = requestAnimationFrame(() => onSearchTermChange());
   }
 
-  editor.on("load", setData);
+  editor.on("load", ({ buffer }) => {
+    $search.value = "";
+    parseStrings(buffer);
+  });
+  editor.on("change", ({ buffer }) => parseStrings(buffer));
 
   const { $element } = $panel({
     header: ["Strings"],
@@ -72,6 +75,5 @@ export const $strings = (editor) => {
 
   return {
     $element,
-    setData,
   };
 }
