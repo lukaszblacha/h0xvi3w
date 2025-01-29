@@ -1,14 +1,17 @@
-import { $div, $input, $span, bindAll, unbindAll } from "../dom.js";
+import { $button, $div, $input, bindAll } from "../dom.js";
 import { $panel } from "../components/panel.js";
+import { $split } from "../components/split.js";
 
 export const $strings = (editor) => {
-  let afRid, afRid2;
+  let afRid;
   let strArray = [];
 
-  const $body = $div();
-  const $search = $input({ type: "search" });
+  const $body = $div({ class: "list" });
+  const $search = $input({ type: "search", placeholder: "Search" });
+  const $minLength = $input({ type: "number", min: 3, max: 15, step: 1, value: 3 });
+  const $caseInsensitive = $input({ type: "checkbox", title: "[Aa] Case insensitive" });
 
-  function getStrings(data, minLength = 3) {
+  function getStrings(data) {
     const arr = [];
     let str = "";
     for (let i in data) {
@@ -16,7 +19,7 @@ export const $strings = (editor) => {
       if (chr >= 0x20 && chr < 0x7f) {
         str = str.concat(String.fromCharCode(chr));
       } else if (str.length) {
-        if (str.length >= minLength) {
+        if (str.length >= $minLength.value) {
           arr.push([str, i - str.length]);
         }
         str = "";
@@ -28,8 +31,9 @@ export const $strings = (editor) => {
   function render(filter = "") {
     $body.innerText = "";
     strArray.forEach(([str, offset]) => {
-      if (str.includes(filter)) {
-        $body.appendChild($span({ class: "string", 'data-start': offset, 'data-end': offset + str.length }, [str]));
+      const fc = $caseInsensitive.checked ? str.toLowerCase().includes(filter.toLowerCase()) : str.includes(filter)
+      if ((!filter || fc) && str.length >= Number($minLength.value ?? 3)) {
+        $body.appendChild($div({ class: "string", 'data-start': offset, 'data-end': offset + str.length }, [str]));
       }
     });
   }
@@ -47,9 +51,11 @@ export const $strings = (editor) => {
 
   bindAll($body, { click: onStringClick });
   bindAll($search, { change: onSearchTermChange });
+  bindAll($minLength, { change: onSearchTermChange });
+  bindAll($caseInsensitive, { change: onSearchTermChange });
 
   const setData = (data) => { // Takes Uint8Array
-    strArray = getStrings(data, 3);
+    strArray = getStrings(data);
     $search.value = "";
     afRid = requestAnimationFrame(() => onSearchTermChange());
   }
@@ -58,7 +64,10 @@ export const $strings = (editor) => {
 
   const { $element } = $panel({
     header: ["Strings"],
-    body: [$search, $body],
+    body: [
+      $split({ class: "filters" }, [$search, $minLength, $caseInsensitive]).setHorizontal(),
+      $body
+    ],
   }, { class: "strings" });
 
   return {

@@ -7,10 +7,6 @@
       width: 15px;
       flex: 0 0 1;
     }
-
-    .grow {
-      flex-grow: 1;
-    }
   }
 
   .panel-header {
@@ -21,7 +17,6 @@
 
   .panel-body {
     flex-direction: row;
-    flex-grow: 1;
     overflow-y: auto;
 
     *::selection {
@@ -34,6 +29,7 @@
     }  
 
     [contenteditable] {
+      flex-grow: 0;
       outline: none;
       caret-color: #FF0000;
       background-color: inherit;
@@ -41,7 +37,10 @@
       border: none;
       resize: none;
       font: inherit;
-      flex-grow: 0;
+      overflow-wrap: anywhere;
+      line-break: anywhere;
+      white-space: break-spaces;
+  
     }
   }
 
@@ -58,12 +57,6 @@
 
   .col-index {
     text-align: right;
-    white-space: pre;
     color: var(--color-mild-text);
-  }
-
-  .col-ascii {
-    overflow-wrap: anywhere;
-    line-break: anywhere;
   }
 }

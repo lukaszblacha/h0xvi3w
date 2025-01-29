@@ -1,12 +1,14 @@
-import { $div } from "../dom.js";
+import { $div, cn } from "../dom.js";
 
-export const $split = (content) => {
-  const $element = $div({ class: "vertical-split" }, content);
+export const $split = (attributes = {}, content) => {
+  const $element = $div({ ...attributes, class: cn("vertical-split", attributes.class) }, content);
 
   const obj = { $element };
 
   const setClassName = (className) => {
-    $element.className = className;
+    $element.classList.remove("horizontal-split");
+    $element.classList.remove("vertical-split");
+    $element.classList.add(className);
     return obj;
   }
 

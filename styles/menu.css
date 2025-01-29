@@ -1,5 +1,4 @@
 .main-menu {
-  --color-menu-item-bg: #343536;
   --color-menu-item-active-bg: #303132;
 
   display: flex;
@@ -32,7 +31,7 @@
 
 .menu {
   .item {
-    background-color: var(--color-menu-item-bg);
+    background-color: var(--color-input-container-bg);
     padding: .2ch .5ch;
     line-height: 1.3em;
     position: relative;
@@ -46,7 +45,7 @@
 
 /* Fancy stuff */
 .main-menu {
-  background-color: var(--color-menu-item-bg);
+  background-color: var(--color-input-container-bg);
 
   .submenu, .item {
     border-radius: 3px;
@@ -59,8 +58,8 @@
   }
 
   .submenu {
-    background-color: var(--color-menu-item-bg);
-    border-color: var(--color-menu-item-bg);
+    background-color: var(--color-input-container-bg);
+    border-color: var(--color-input-container-bg);
     box-shadow: 0 1px 5px #10111280;
   }
 }

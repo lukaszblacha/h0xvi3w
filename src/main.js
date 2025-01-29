@@ -19,14 +19,12 @@ const menu = $menu({
 const editor = $editor(16);
 const values = $valuesExplorer();
 const strings = $strings(editor);
-const commands = $div({}, ["commands"]);
 editor.on("select", values.setValue);
 
 document.body.appendChild($div({ id: "root" },
-  $split([
+  $split({}, [
     menu,
-    $split([editor, values, strings]).setHorizontal(),
-    commands,
+    $split({}, [editor, values, strings]).setHorizontal(),
   ]).setVertical()
 ));
 

@@ -1,6 +1,6 @@
 .panel {
   display: flex;
-  flex-grow: 1;
+  flex: 1 1 auto;
   flex-direction: column;
   justify-content: stretch;
   border: solid 1px var(--color-mild-text);
@@ -18,9 +18,8 @@
   }
 
   .panel-body {
-    flex-grow: 1;
-    flex-basis: 0;
     overflow-y: auto;
+    flex: 1 1 auto;
   }
 
   .panel-footer {

@@ -1,6 +1,6 @@
-export const $ = (tag, attributers = {}, content = []) => {
+export const $ = (tag, attributes = {}, content = []) => {
   const $el = document.createElement(tag);
-  Object.entries(attributers).forEach(([name, value]) => $el.setAttribute(name, value));
+  Object.entries(attributes).forEach(([name, value]) => $el.setAttribute(name, value));
   (Array.isArray(content) ? content : [content])
     .filter(Boolean)
     .forEach(child => {
@@ -10,7 +10,7 @@ export const $ = (tag, attributers = {}, content = []) => {
       try {
         $el.appendChild($child)
       } catch(e) {
-        debugger;
+        console.error(e);
       }
     });
   return $el;
@@ -18,6 +18,7 @@ export const $ = (tag, attributers = {}, content = []) => {
 
 export const $div = $.bind(null, "div");
 export const $span = $.bind(null, "span");
+export const $button = $.bind(null, "button");
 export const $input = $.bind(null, "input");
 export const $table = $.bind(null, "table");
 export const $tr = $.bind(null, "tr");

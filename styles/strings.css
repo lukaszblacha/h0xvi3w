@@ -1,18 +1,53 @@
-.strings {
-  .string {
-    display: block;
-    border-radius: 3px;
-    padding: 1px 4px;
-    margin: 0 2px;
-    line-height: 1.6em;
-    word-break: break-all;
+.horizontal-split > .strings {
+  width: 1px;
+}
 
-    &.hidden {
-      display: none;
+.strings {
+  .panel-body {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 8px;
+
+    .filters {
+      flex: 0 0 auto;
+      background-color: var(--color-input-container-bg);
+    
+      input[type="search"] {
+        flex-grow: 1;
+      }
+      input[type="number"] {
+        width: 40px;
+        padding-left: 1px;
+        padding-right: 0;
+      }
+      input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+      }
     }
 
-    &:hover {
-      background-color: rgb(136, 89, 0);
+    .list {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden auto;
+    }
+
+    .string {
+      flex: 0 0 auto;
+      display: block;
+      border-radius: 3px;
+      padding: .2ch 1ch;
+      white-space: nowrap;
+      overflow: auto visible;
+  
+      &.hidden {
+        display: none;
+      }
+  
+      &:hover {
+        background-color: rgb(136, 89, 0);
+      }
     }
   }
 }
