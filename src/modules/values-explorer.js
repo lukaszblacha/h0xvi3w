@@ -1,5 +1,5 @@
-import { $div, $table, $td, $tr } from "./dom.js";
-import { $panel } from "./components/panel.js";
+import { $div, $table, $td, $tr } from "../dom.js";
+import { $panel } from "../components/panel.js";
 
 export const $valuesExplorer = (lineWidth = 16) => {
   let value = [];

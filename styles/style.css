@@ -26,6 +26,24 @@ html, body, #root {
   flex-direction: column;
 }
 
+input {
+  display: block;
+  width: 100%;
+  padding: 4px;
+  border: none;
+  border-radius: 3px;
+  background: #343536;
+  font-size: inherit;
+  line-height: inherit;
+  font-family: inherit;
+  color: inherit;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 -1px 5px #10111280 inset;
+  }
+}
+
 .vertical-split, .horizontal-split {
   display: flex;
   flex-grow: 1;
@@ -36,9 +54,3 @@ html, body, #root {
 .vertical-split {
   flex-direction: column;
 }
-
-/*
- TODO: virtual table, should fix scrollbars on huge files
- TODO: python's structs with highlights (offset + format)
- TODO: tabs (sub-buffers)
- */

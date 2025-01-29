@@ -30,6 +30,7 @@
 
     .col-hex {
       letter-spacing: var(--hex-letter-spacing);
+      text-transform: lowercase;
     }  
 
     [contenteditable] {

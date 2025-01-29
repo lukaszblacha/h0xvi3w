@@ -20,6 +20,7 @@
   .panel-body {
     flex-grow: 1;
     flex-basis: 0;
+    overflow-y: auto;
   }
 
   .panel-footer {

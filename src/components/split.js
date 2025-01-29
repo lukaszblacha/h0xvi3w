@@ -3,9 +3,15 @@ import { $div } from "../dom.js";
 export const $split = (content) => {
   const $element = $div({ class: "vertical-split" }, content);
 
-  return {
-    setVertical: () => $element.className = "vertical-split",
-    setHorizontal: () => $element.className = "horizontal-split",
-    $element,
+  const obj = { $element };
+
+  const setClassName = (className) => {
+    $element.className = className;
+    return obj;
   }
+
+  obj.setVertical = () => setClassName("vertical-split");
+  obj.setHorizontal = () => setClassName("horizontal-split");
+
+  return obj;
 }

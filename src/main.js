@@ -1,8 +1,9 @@
 import { $div, $input } from "./dom.js";
-import { $editor } from "./editor.js";
+import { $editor } from "./modules/editor.js";
+import { $valuesExplorer } from "./modules/values-explorer.js";
+import { $strings } from "./modules/strings.js";
 import { $menu } from "./components/menu.js";
 import { $split } from "./components/split.js";
-import { $valuesExplorer } from "./values-explorer.js";
 
 const $file = $input({ type: "file" });
 const menu = $menu({
@@ -17,21 +18,18 @@ const menu = $menu({
 
 const editor = $editor(16);
 const values = $valuesExplorer();
+const strings = $strings(editor);
+const commands = $div({}, ["commands"]);
 editor.on("select", values.setValue);
 
-const split = $split([editor, values]);
-split.setHorizontal();
-
-document.body.appendChild($div({ id: "root" }, [menu, split]));
-
-// Sample data - bmp file
-editor.setData(new Uint8Array(
-  `424d0000000000000000360000002800000004000000fcffffff010020000000000000000000000000000000000000000000000000000000ff0000ff0000ff000000ffffff000000cc0000cc0000cc000000cccccc000000880000880000880000008888880000004400004400004400000044444400`
-    .match(/.{2}/g)
-    .map(v => parseInt(`0x${v}`))
+document.body.appendChild($div({ id: "root" },
+  $split([
+    menu,
+    $split([editor, values, strings]).setHorizontal(),
+    commands,
+  ]).setVertical()
 ));
 
-// Loadfile
 $file.addEventListener("change", function () {
   const file = this.files?.[0];
   if (!file) {
