@@ -24,6 +24,7 @@ export const $table = $.bind(null, "table");
 export const $tr = $.bind(null, "tr");
 export const $th = $.bind(null, "th");
 export const $td = $.bind(null, "td");
+export const $a = $.bind(null, "a");
 
 export const cn = (...args) => args.filter(Boolean).join(" ");
 

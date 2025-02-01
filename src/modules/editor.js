@@ -54,6 +54,7 @@ export const $editor = (lineWidth = 16) => {
   let bufferLength = 0;
   let buffer = new Uint8Array([]);
   let insertMode = true;
+  let fileName;
   
   function getBuffer() {
     return buffer.subarray(0, bufferLength);
@@ -241,6 +242,27 @@ export const $editor = (lineWidth = 16) => {
     }
   });
 
+  function setBuffer(buf) {
+    buffer = buf;
+    bufferLength = buffer.length;
+    document.removeEventListener("selectionchange", onSelectionChange);
+
+    $size.innerText = `size: ${displayValue(bufferLength)}`;
+    const hex = Array.from(buffer).map(u8ToHex);
+    const text = Array.from(buffer).map(u8ToChar);
+    $hex.innerText = hex.join("");
+    $text.innerText = text.join("");
+    $index.innerText = new Array(Math.ceil(bufferLength / lineWidth)).fill(0)
+      .map((_, i) => (i * lineWidth)
+        .toString(16)
+        .padStart(6, 0))
+      .join("\n");
+
+    document.addEventListener("selectionchange", onSelectionChange);
+    trigger("load", { buffer })
+    setSelection($text.firstChild, 0);
+  }
+
   return {
     $element,
     on(event, handler) {
@@ -255,25 +277,13 @@ export const $editor = (lineWidth = 16) => {
       $body.scrollTop = Math.floor(startOffset / lineWidth) * 20;
     },
     getBuffer,
-    setBuffer(buf) {
-      buffer = buf;
-      bufferLength = buffer.length;
-      document.removeEventListener("selectionchange", onSelectionChange);
-
-      $size.innerText = `size: ${displayValue(bufferLength)}`;
-      const hex = Array.from(buffer).map(u8ToHex);
-      const text = Array.from(buffer).map(u8ToChar);
-      $hex.innerText = hex.join("");
-      $text.innerText = text.join("");
-      $index.innerText = new Array(Math.ceil(bufferLength / lineWidth)).fill(0)
-        .map((_, i) => (i * lineWidth)
-          .toString(16)
-          .padStart(6, 0))
-        .join("\n");
-
-      document.addEventListener("selectionchange", onSelectionChange);
-      trigger("load", { buffer })
-      setSelection($text.firstChild, 0);
+    setBuffer,
+    getFileName() {
+      return fileName ?? "data.bin";
+    },
+    openFile(buf, name) {
+      fileName = name;
+      setBuffer(buf);
     }
   };
 }
