@@ -9,7 +9,7 @@ export const $strings = (editor) => {
   const $body = $div({ class: "list" });
   const $search = $input({ type: "search", placeholder: "Search" });
   const $minLength = $input({ type: "number", min: 3, max: 15, step: 1, value: 3 });
-  const $caseInsensitive = $input({ type: "checkbox", title: "[Aa] Case insensitive" });
+  const $caseSensitive = $input({ type: "checkbox", title: "[Aa] Case sensitive" });
 
   function getStrings(data) {
     const arr = [];
@@ -31,7 +31,7 @@ export const $strings = (editor) => {
   function render(filter = "") {
     $body.innerText = "";
     strArray.forEach(([str, offset]) => {
-      const fc = $caseInsensitive.checked ? str.toLowerCase().includes(filter.toLowerCase()) : str.includes(filter)
+      const fc = $caseSensitive.checked ? str.includes(filter) : str.toLowerCase().includes(filter.toLowerCase());
       if ((!filter || fc) && str.length >= Number($minLength.value ?? 3)) {
         $body.appendChild($div({ class: "string", 'data-start': offset, 'data-end': offset + str.length }, [str]));
       }
@@ -52,7 +52,7 @@ export const $strings = (editor) => {
   bindAll($body, { click: onStringClick });
   bindAll($search, { change: onSearchTermChange });
   bindAll($minLength, { change: onSearchTermChange });
-  bindAll($caseInsensitive, { change: onSearchTermChange });
+  bindAll($caseSensitive, { change: onSearchTermChange });
 
   function parseStrings(buffer) {
     strArray = getStrings(buffer);
@@ -68,7 +68,7 @@ export const $strings = (editor) => {
   const { $element } = $panel({
     header: ["Strings"],
     body: [
-      $split({ class: "filters" }, [$search, $minLength, $caseInsensitive]).setHorizontal(),
+      $split({ class: "filters" }, [$search, $minLength, $caseSensitive]).setHorizontal(),
       $body
     ],
   }, { class: "strings" });
