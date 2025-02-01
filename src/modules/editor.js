@@ -1,4 +1,4 @@
-import { $div, bindAll } from "../dom.js";
+import { $, bindAll } from "../dom.js";
 import { $panel } from "../components/panel.js";
 import { highlight, range, replaceInText, setCaret, setSelection } from "../text.js";
 
@@ -15,24 +15,24 @@ export const $editor = (lineWidth = 16) => {
   const headerText = Array(lineWidth).fill(0).fill(0).map((_, i) => i.toString(16)).join("").toUpperCase();
   const { $element } = $panel({
       header: [
-        $div({ class: "col-index" }, "offset"),
-        $div({ class: "spacer" }),
-        $div({ class: "col-hex" }, headerText),
-        $div({ class: "spacer" }),
-        $div({ class: "col-ascii" }, headerText),
+        $.div({ class: "col-index" }, "offset"),
+        $.div({ class: "spacer" }),
+        $.div({ class: "col-hex" }, headerText),
+        $.div({ class: "spacer" }),
+        $.div({ class: "col-ascii" }, headerText),
       ],
       body: [
-        $div({ class: "col-index" }),
-        $div({ class: "spacer" }),
-        $div({
+        $.div({ class: "col-index" }),
+        $.div({ class: "spacer" }),
+        $.div({
           class: "col-hex",
           style: `width:  calc(${lineWidth * 2} * (1ch + var(--hex-letter-spacing)))`,
           spellcheck: false,
           contenteditable: "plaintext-only",
           autocomplete: "off"
         }),
-        $div({ class: "spacer" }),
-        $div({
+        $.div({ class: "spacer" }),
+        $.div({
           class: "col-ascii",
           style: `width: ${lineWidth}ch`,
           spellcheck: false,
@@ -40,7 +40,7 @@ export const $editor = (lineWidth = 16) => {
           autocomplete: "off"
         })
       ],
-      footer: [$div(), $div(), $div(), $div()],
+      footer: [$.div(), $.div(), $.div(), $.div()],
     },
     { class: "editor" },    
   );

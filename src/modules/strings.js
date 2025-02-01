@@ -1,4 +1,4 @@
-import { $div, $input, bindAll } from "../dom.js";
+import { $, bindAll } from "../dom.js";
 import { $panel } from "../components/panel.js";
 import { $split } from "../components/split.js";
 
@@ -6,10 +6,10 @@ export const $strings = (editor) => {
   let afRid;
   let strArray = [];
 
-  const $body = $div({ class: "list" });
-  const $search = $input({ type: "search", placeholder: "Search" });
-  const $minLength = $input({ type: "number", min: 3, max: 15, step: 1, value: 3 });
-  const $caseSensitive = $input({ type: "checkbox", title: "[Aa] Case sensitive" });
+  const $body = $.div({ class: "list" });
+  const $search = $.input({ type: "search", placeholder: "Search" });
+  const $minLength = $.input({ type: "number", min: 3, max: 15, step: 1, value: 3 });
+  const $caseSensitive = $.input({ type: "checkbox", title: "[Aa] Case sensitive" });
 
   function getStrings(data) {
     const arr = [];
@@ -33,7 +33,7 @@ export const $strings = (editor) => {
     strArray.forEach(([str, offset]) => {
       const fc = $caseSensitive.checked ? str.includes(filter) : str.toLowerCase().includes(filter.toLowerCase());
       if ((!filter || fc) && str.length >= Number($minLength.value ?? 3)) {
-        $body.appendChild($div({ class: "string", 'data-start': offset, 'data-end': offset + str.length }, [str]));
+        $body.appendChild($.div({ class: "string", 'data-start': offset, 'data-end': offset + str.length }, [str]));
       }
     });
   }

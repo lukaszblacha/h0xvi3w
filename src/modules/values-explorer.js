@@ -1,10 +1,10 @@
-import { $div, $table, $td, $tr } from "../dom.js";
+import { $ } from "../dom.js";
 import { $panel } from "../components/panel.js";
 
 export const $valuesExplorer = (editor) => {
   let value = [];
   let bigEndian = true;
-  let $body = $div();
+  let $body = $.div();
   let afRid;
 
   const { $element } = $panel({
@@ -41,7 +41,7 @@ export const $valuesExplorer = (editor) => {
   const render = () => {
     $body.innerText = "";
 
-    const table = $table({}, [
+    const table = $.table({}, [
       ["bin", formatBinValue()],
       ["chr", formatChar()],
       ["i8", formatInt(8, true)],
@@ -53,7 +53,7 @@ export const $valuesExplorer = (editor) => {
       ["i64", formatInt(64, true)],
       ["u64", formatInt(64, false)],
       ].map(
-        ([name, value]) => $tr({}, [$td({}, [name]), $td({}, [String(value)])])
+        ([name, value]) => $.tr({}, [$.td({}, [name]), $.td({}, [String(value)])])
       )
     );
 

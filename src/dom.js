@@ -16,15 +16,8 @@ export const $ = (tag, attributes = {}, content = []) => {
   return $el;
 }
 
-export const $div = $.bind(null, "div");
-export const $span = $.bind(null, "span");
-export const $button = $.bind(null, "button");
-export const $input = $.bind(null, "input");
-export const $table = $.bind(null, "table");
-export const $tr = $.bind(null, "tr");
-export const $th = $.bind(null, "th");
-export const $td = $.bind(null, "td");
-export const $a = $.bind(null, "a");
+["div", "ul", "li", "span", "button", "input", "table", "tr", "th", "td", "a"]
+  .forEach((tagName) => $[tagName] = $.bind(null, tagName));
 
 export const cn = (...args) => args.filter(Boolean).join(" ");
 

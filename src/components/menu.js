@@ -1,12 +1,12 @@
-import { $div, cn } from "../dom.js";
+import { $, cn } from "../dom.js";
 
 const toMenuItems = (items) => {
   if (!Array.isArray(items)) { return [] };
 
   return items.map((item) => {
     const items = toMenuItems(item.items);
-    const content = items.length > 0 && $div({ class: "submenu" }, items);
-    const $el = $div(
+    const content = items.length > 0 && $.ul({ class: "submenu" }, items);
+    const $el = $.li(
       { class: "item", tabIndex: 0 },
       [item.label, item.$element, content]
     );
@@ -22,6 +22,6 @@ const toMenuItems = (items) => {
 
 export const $menu = (obj) => {
   return {
-    $element: $div({ class: cn("menu", "main-menu") }, toMenuItems(obj.items))
+    $element: $.ul({ class: cn("menu", "main-menu") }, toMenuItems(obj.items))
   };
 }

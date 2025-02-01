@@ -1,7 +1,7 @@
-import { $div, cn } from "../dom.js";
+import { $, cn } from "../dom.js";
 
 export const $split = (attributes = {}, content) => {
-  const $element = $div({ ...attributes, class: cn("vertical-split", attributes.class) }, content);
+  const $element = $.div({ ...attributes, class: cn("vertical-split", attributes.class) }, content);
 
   const obj = { $element };
 

@@ -1,4 +1,4 @@
-import { $div, $a, $input, bindAll } from "./dom.js";
+import { $, bindAll } from "./dom.js";
 import { $editor } from "./modules/editor.js";
 import { $valuesExplorer } from "./modules/values-explorer.js";
 import { $strings } from "./modules/strings.js";
@@ -23,7 +23,7 @@ function readBufferFromFile(e) {
 function saveFile() {
   const blob = new Blob([editor.getBuffer()], { type: "application/octet-stream" });
   const url = window.URL.createObjectURL(blob);
-  const link = $a({ href: url, download: editor.getFileName() });
+  const link = $.a({ href: url, download: editor.getFileName() });
   document.body.appendChild(link);
   link.style = 'display: none';
   link.click();
@@ -31,7 +31,7 @@ function saveFile() {
   setTimeout(() => window.URL.revokeObjectURL(url), 1000);
 }
 
-const $file = $input({ type: "file" });
+const $file = $.input({ type: "file" });
 bindAll($file, { change: readBufferFromFile });
 
 const menu = $menu({
@@ -51,7 +51,7 @@ const menu = $menu({
 const values = $valuesExplorer(editor);
 const strings = $strings(editor);
 
-document.body.appendChild($div({ id: "root" },
+document.body.appendChild($.div({ id: "root" },
   $split({}, [
     menu,
     $split({}, [editor, values, strings]).setHorizontal(),
