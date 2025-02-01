@@ -47,7 +47,6 @@
   .panel-footer {
     display: flex;
     justify-content: space-between;
-    gap: 50px;
     width: 100%;
 
     & > * {

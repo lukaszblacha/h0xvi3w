@@ -1,6 +1,6 @@
 .panel {
   display: flex;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   flex-direction: column;
   justify-content: stretch;
   border: solid 1px var(--color-mild-text);
