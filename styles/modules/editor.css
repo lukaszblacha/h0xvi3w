@@ -1,5 +1,4 @@
 .editor {
-  flex-grow: 0;
   & > * {
     display: flex;
 

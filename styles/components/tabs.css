@@ -1,0 +1,42 @@
+.tabs {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: stretch;
+  line-height: 20px;
+  font-size: 18px;
+
+  &.tabs-bottom {
+    & > *:nth-child(1) {
+      order: 1;
+    }
+  }
+
+  ul.tabs-list {
+    display: flex;
+    padding: 0 5px 0;
+    gap: 1px;
+    font-size: small;
+
+    & > li {
+      border: solid 1px var(--color-mild-text);
+      border-radius: 6px 6px 0 0;
+      border-bottom-width: 0;
+      padding: 1px 5px;
+
+      &.active {
+        background-color: var(--color-mild-text);
+      }
+    }
+  }
+
+  .tabs-container {
+    flex: 1 1 0;
+    display: flex;
+    overflow: auto;
+
+    & > *:not(.active-tab) {
+      display: none !important;
+    }
+  }
+}

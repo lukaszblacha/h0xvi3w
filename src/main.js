@@ -4,6 +4,7 @@ import { $valuesExplorer } from "./modules/values-explorer.js";
 import { $strings } from "./modules/strings.js";
 import { $menu } from "./components/menu.js";
 import { $split } from "./components/split.js";
+import { $tabs } from "./components/tabs.js";
 
 const editor = $editor(16);
 
@@ -54,6 +55,10 @@ const strings = $strings(editor);
 document.body.appendChild($.div({ id: "root" },
   $split({}, [
     menu,
-    $split({}, [editor, values, strings]).setHorizontal(),
+    $split({}, [
+      $tabs({}, [editor]),
+      values,
+      strings
+    ]).setHorizontal(),
   ]).setVertical()
 ));
