@@ -7,10 +7,10 @@ export const $valuesExplorer = (editor) => {
   let $body = $.div();
   let afRid;
 
-  const { $element } = $panel({
+  const { $element } = $panel({ class: "values-explorer", label: "Values explorer" }, {
     header: ["Values explorer"],
     body: [$body],
-  }, { class: "values-explorer" });
+  });
 
   function formatBinValue() {
     return value[0]?.toString(2).padStart(8, "0") ?? "◌";

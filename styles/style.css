@@ -1,3 +1,12 @@
+@import url("highlights.css");
+@import url("components/menu.css");
+@import url("components/panel.css");
+@import url("components/split.css");
+@import url("components/tabs.css");
+@import url("modules/editor.css");
+@import url("modules/strings.css");
+@import url("modules/values-explorer.css");
+
 * {
   scrollbar-width: none;
 }
@@ -58,21 +67,6 @@ input[type="checkbox"][label] {
     justify-content: center;
   }
 }
-
-.vertical-split, .horizontal-split {
-  display: flex;
-  flex: 1 1 auto;
-  padding: 2px;
-  gap: 4px;
-  max-width: 100%;
-  max-height: 100%;
-  overflow: auto;
-}
-
-.vertical-split {
-  flex-direction: column;
-}
-
 
 /* Fancy stuff */
 .panel-header {

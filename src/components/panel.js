@@ -1,6 +1,6 @@
 import { $, cn } from "../dom.js";
 
-export const $panel = ({ header, body, footer } = {}, attributes = {}) => {
+export const $panel = (attributes = {}, { header, body, footer } = {}) => {
   const $element = $.div(
     { ...attributes, class: cn("panel", attributes.class) },
     [

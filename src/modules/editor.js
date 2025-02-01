@@ -13,37 +13,35 @@ const u8ToHex = (i) => i.toString(16).padStart(2, "0");
 
 export const $editor = (lineWidth = 16) => {
   const headerText = Array(lineWidth).fill(0).fill(0).map((_, i) => i.toString(16)).join("").toUpperCase();
-  const { $element } = $panel({
-      header: [
-        $.div({ class: "col-index" }, "offset"),
-        $.div({ class: "spacer" }),
-        $.div({ class: "col-hex" }, headerText),
-        $.div({ class: "spacer" }),
-        $.div({ class: "col-ascii" }, headerText),
-      ],
-      body: [
-        $.div({ class: "col-index" }),
-        $.div({ class: "spacer" }),
-        $.div({
-          class: "col-hex",
-          style: `width:  calc(${lineWidth * 2} * (1ch + var(--hex-letter-spacing)))`,
-          spellcheck: false,
-          contenteditable: "plaintext-only",
-          autocomplete: "off"
-        }),
-        $.div({ class: "spacer" }),
-        $.div({
-          class: "col-ascii",
-          style: `width: ${lineWidth}ch`,
-          spellcheck: false,
-          contenteditable: "plaintext-only",
-          autocomplete: "off"
-        })
-      ],
-      footer: [$.div(), $.div(), $.div(), $.div()],
-    },
-    { class: "editor" },    
-  );
+  const { $element } = $panel({ class: "editor", label: "Editor" }, {
+    header: [
+      $.div({ class: "col-index" }, "offset"),
+      $.div({ class: "spacer" }),
+      $.div({ class: "col-hex" }, headerText),
+      $.div({ class: "spacer" }),
+      $.div({ class: "col-ascii" }, headerText),
+    ],
+    body: [
+      $.div({ class: "col-index" }),
+      $.div({ class: "spacer" }),
+      $.div({
+        class: "col-hex",
+        style: `width:  calc(${lineWidth * 2} * (1ch + var(--hex-letter-spacing)))`,
+        spellcheck: false,
+        contenteditable: "plaintext-only",
+        autocomplete: "off"
+      }),
+      $.div({ class: "spacer" }),
+      $.div({
+        class: "col-ascii",
+        style: `width: ${lineWidth}ch`,
+        spellcheck: false,
+        contenteditable: "plaintext-only",
+        autocomplete: "off"
+      })
+    ],
+    footer: [$.div(), $.div(), $.div(), $.div()],
+  });
 
   const $body = $element.querySelector(".panel-body");
   const [$index, $hex, $text] = $element.querySelectorAll(".panel-body > :not(.spacer)");

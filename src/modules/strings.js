@@ -65,13 +65,13 @@ export const $strings = (editor) => {
   });
   editor.on("change", ({ buffer }) => parseStrings(buffer));
 
-  const { $element } = $panel({
+  const { $element } = $panel({ class: "strings", label: "Strings" }, {
     header: ["Strings"],
     body: [
       $split({ class: "filters" }, [$search, $minLength, $caseSensitive]).setHorizontal(),
       $body
     ],
-  }, { class: "strings" });
+  });
 
   return {
     $element,
