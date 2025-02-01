@@ -9,7 +9,7 @@ export const $strings = (editor) => {
   const $body = $.div({ class: "list" });
   const $search = $.input({ type: "search", placeholder: "Search" });
   const $minLength = $.input({ type: "number", min: 3, max: 15, step: 1, value: 3 });
-  const $caseSensitive = $.input({ type: "checkbox", title: "[Aa] Case sensitive" });
+  const $caseSensitive = $.input({ type: "checkbox", title: "Match case", label: "Aa" });
 
   function getStrings(data) {
     const arr = [];

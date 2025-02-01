@@ -30,9 +30,12 @@ body {
 
 input, button {
   display: block;
+  position: relative;
+  appearance: none;
   width: 100%;
+  margin: 0;
   padding: .2ch 1ch;
-  border: none;
+  border: solid 1px transparent;
   border-radius: 3px;
   background: #343536;
   font-size: inherit;
@@ -42,7 +45,17 @@ input, button {
 
   &:focus {
     outline: none;
-    box-shadow: 0 -1px 5px #10111280 inset;
+  }
+}
+
+input[type="checkbox"][label] {
+  &:after {
+    position: absolute;
+    inset: 0;
+    content: attr(label);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
@@ -58,4 +71,27 @@ input, button {
 
 .vertical-split {
   flex-direction: column;
+}
+
+
+/* Fancy stuff */
+.panel-header {
+  box-shadow: 0 2px 3px #0007;
+}
+input, button {
+  border-color: #0008;
+}
+
+input:hover, input:focus {
+  box-shadow: 0 -1px 2px #0008 inset;
+  background-color: #202122;
+}
+
+button, input[type="checkbox"] {
+  box-shadow: 0 1px 2px #0008;
+}
+
+input[type="checkbox"][label]:checked:after {
+  background-color: #202122;
+  box-shadow: 0 -1px 2px #0008 inset;
 }
