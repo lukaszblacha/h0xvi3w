@@ -117,6 +117,7 @@ export const $tabs = (attributes = {}, content) => {
       const className = Array.from($container.classList).filter(c => c.startsWith("drop-"))[0];
       if (className === "drop-center") {
         $container.appendChild($source);
+        setActiveTabIndex($container.children.length - 1);
       } else {
         const $placeholder = $parent.insertBefore($.div(), $element);
         const splitContent = (["drop-top", "drop-left"].includes(className))

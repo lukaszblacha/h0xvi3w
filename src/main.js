@@ -57,8 +57,10 @@ document.body.appendChild($.div({ id: "root" },
     menu,
     $split({}, [
       editor,
-      values,
-      strings,
+      $split({}, [
+        values,
+        strings,  
+      ]).setOrientation("vertical"),
     ]).setOrientation("horizontal"),
   ]).setOrientation("vertical")
 ));
