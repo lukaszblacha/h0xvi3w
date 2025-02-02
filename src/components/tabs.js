@@ -65,8 +65,7 @@ export const $tabs = (attributes = {}, content) => {
       $list.appendChild($el);
     });
 
-    window.$list = $list;
-    setActiveTabIndex(activeTabIndex);
+    setActiveTabIndex(activeTabIndex >= $children.length ? $children.length - 1 : activeTabIndex);
   }
 
   const observer = new MutationObserver(onDomChange);
