@@ -1,4 +1,5 @@
 .editor {
+  min-height: 50vh;
   flex: 1 0 auto !important;
 
   .panel-header, .panel-body {

@@ -1,4 +1,4 @@
-import { $ } from "../dom.js";
+import { $, debounce } from "../dom.js";
 import { $panel } from "../components/panel.js";
 
 export const $valuesExplorer = (editor) => {
@@ -57,11 +57,11 @@ export const $valuesExplorer = (editor) => {
     $body.appendChild(table);
   }
 
-  function setValue({ buffer, startOffset }) {
+  const setValue = debounce(({ buffer, startOffset }) => {
     cancelAnimationFrame(afRid)
     value = buffer.slice(startOffset, startOffset + 8);
     afRid = requestAnimationFrame(render);
-  }
+  }, 100);
 
   editor.on("select", setValue);
 

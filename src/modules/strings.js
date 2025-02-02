@@ -1,4 +1,4 @@
-import { $, bindAll } from "../dom.js";
+import { $, bindAll, debounce } from "../dom.js";
 import { $panel } from "../components/panel.js";
 
 export const $strings = (editor) => {
@@ -62,7 +62,8 @@ export const $strings = (editor) => {
     $search.value = "";
     parseStrings(buffer);
   });
-  editor.on("change", ({ buffer }) => parseStrings(buffer));
+
+  editor.on("change", debounce(({ buffer }) => parseStrings(buffer)), 1000);
 
   const { $element } = $panel({ class: "strings", label: "Strings" }, {
     body: [

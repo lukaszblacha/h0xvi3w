@@ -38,3 +38,11 @@ export const unbindAll = ($node, events = {}) => {
     })
   });
 }
+
+export function debounce(fn, ms) {
+  let ref;
+  return (...args) => {
+    clearTimeout(ref);
+    ref = setTimeout(() => { fn(...args) }, ms);
+  };
+};

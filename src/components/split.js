@@ -1,7 +1,5 @@
 import { $, cn } from "../dom.js";
 
-const isSplitElement = ($el) => $el.classList.contains("split");
-
 export const $split = (attributes = {}, content) => {
   const $element = $.div({ ...attributes, class: cn("split", attributes.class) }, content);
 
@@ -19,10 +17,8 @@ export const $split = (attributes = {}, content) => {
           break;
         case 1: {
           const $child = $element.children[0];
-          if (isSplitElement($child)) {
-            $parent.insertBefore($child, $element);
-            destroy();
-          }
+          $parent.insertBefore($child, $element);
+          destroy();
         }
       }
     }

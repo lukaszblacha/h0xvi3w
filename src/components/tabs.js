@@ -81,16 +81,16 @@ export const $tabs = (attributes = {}, content) => {
   bindAll($list, { click: onListItemClick });
   bindAll($container, {
     dragover: (e) => {
+      if (e.target.parentNode !== e.currentTarget) {
+        e.preventDefault();
+      }
+
       const { width, height } = $container.getBoundingClientRect();
       const [px, py] = [
         1 - (width - e.layerX) / width,
         1 - (height - e.layerY) / height
       ];
-  
-      if (e.target.parentNode !== e.currentTarget) {
-        e.preventDefault();
-      }
-  
+    
       let className = "drop-center";
       if (px < 0.2) {
         className = "drop-left";
