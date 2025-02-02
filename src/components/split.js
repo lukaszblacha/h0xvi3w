@@ -1,19 +1,40 @@
 import { $, cn } from "../dom.js";
 
+const isSplitElement = ($el) => $el.classList.contains("split");
+
 export const $split = (attributes = {}, content) => {
-  const $element = $.div({ ...attributes, class: cn("vertical-split", attributes.class) }, content);
+  const $element = $.div({ ...attributes, class: cn("split", attributes.class) }, content);
 
-  const obj = { $element };
-
-  const setClassName = (className) => {
-    $element.classList.remove("horizontal-split");
-    $element.classList.remove("vertical-split");
-    $element.classList.add(className);
-    return obj;
+  function destroy() {
+    observer.disconnect();
+    $element.parentNode?.removeChild($element);
   }
 
-  obj.setVertical = () => setClassName("vertical-split");
-  obj.setHorizontal = () => setClassName("horizontal-split");
+  const observer = new MutationObserver(() => {
+    const $parent = $element.parentNode;
+    if($parent) {
+      switch ($element.children.length) {
+        case 0:
+          destroy();
+          break;
+        case 1: {
+          const $child = $element.children[0];
+          if (isSplitElement($child)) {
+            $parent.insertBefore($child, $element);
+            destroy();
+          }
+        }
+      }
+    }
+  });
+  observer.observe($element, { childList: true });
+
+  const obj = { $element, destroy };
+  obj.setOrientation = (o) => {
+    if (o === "vertical") $element.setAttribute("vertical", true);
+    else $element.removeAttribute("vertical");
+    return obj;
+  }
 
   return obj;
 }

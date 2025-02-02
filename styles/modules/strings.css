@@ -1,4 +1,4 @@
-.horizontal-split > .strings {
+.split:not([vertical]) > .strings {
   width: 1px;
 }
 

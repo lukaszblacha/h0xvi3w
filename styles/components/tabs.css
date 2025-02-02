@@ -6,9 +6,13 @@
   line-height: 20px;
   font-size: 18px;
 
-  &.tabs-bottom {
+  &[bottom] {
     & > *:nth-child(1) {
       order: 1;
+    }
+
+    ul.tabs-list > li {
+      border-radius: 0 0 6px 6px;
     }
   }
 
@@ -34,9 +38,41 @@
     flex: 1 1 0;
     display: flex;
     overflow: auto;
+    position: relative;
 
     & > *:not(.active-tab) {
       display: none !important;
+    }
+
+    &.drop-center:after, &.drop-right:after, &.drop-left:after, &.drop-top:after, &.drop-bottom:after {
+      position: absolute;
+      border: solid 1px #FFF5;
+      border-radius: 6px;
+      background: #FFAA0055;
+      content: "";
+      inset: 0;
+      pointer-events: none;
+      transition: left 200ms, right 200ms, top 200ms, bottom 200ms;
+    }
+
+    &.drop-center:after {
+      inset: 5%;
+    }
+    &.drop-right:after {
+      inset: 0;
+      left: 50%;
+    }
+    &.drop-left:after {
+      inset: 0;
+      right: 50%;
+    }
+    &.drop-top:after {
+      inset: 0;
+      bottom: 50%;
+    }
+    &.drop-bottom:after {
+      inset: 0;
+      top: 50%;
     }
   }
 }
