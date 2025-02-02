@@ -1,4 +1,7 @@
 .values-explorer {
+  min-height: 20vh;
+  min-width: 15vw;
+
   table {
     width: 100%;
   }

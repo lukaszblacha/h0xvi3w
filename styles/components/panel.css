@@ -1,29 +1,31 @@
 .panel {
   display: flex;
-  flex: 1 1 0;
   flex-direction: column;
-  justify-content: stretch;
   border: solid 1px var(--color-mild-text);
   border-radius: 0.3em;
   line-height: 20px;
   font-size: 18px;
 
   .panel-header, .panel-body, .panel-footer {
+    display: flex;
     padding: .2ch 1ch;
   }
 
-  .panel-header {
+  .panel-header, .panel-footer {
     color: var(--color-mild-text);
-    border-bottom: solid 1px;
+    flex: 0 0 auto;
   }
 
   .panel-body {
-    overflow-y: auto;
-    flex: 1 1 auto;
+    overflow: visible auto;
+    flex: 1 1 0; /* must be zero for scroll behaviour */
+  }
+
+  .panel-header {
+    border-bottom: solid 1px;
   }
 
   .panel-footer {
-    color: var(--color-mild-text);
     border-top: solid 1px;
   }
 }

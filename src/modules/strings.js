@@ -1,6 +1,5 @@
 import { $, bindAll } from "../dom.js";
 import { $panel } from "../components/panel.js";
-import { $split } from "../components/split.js";
 
 export const $strings = (editor) => {
   let afRid;
@@ -67,7 +66,7 @@ export const $strings = (editor) => {
 
   const { $element } = $panel({ class: "strings", label: "Strings" }, {
     body: [
-      $split({ class: "filters" }, [$search, $minLength, $caseSensitive]).setOrientation("horizontal"),
+      $.div({ class: "filters" }, [$search, $minLength, $caseSensitive]),
       $body
     ],
   });

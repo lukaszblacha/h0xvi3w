@@ -4,7 +4,6 @@ import { $valuesExplorer } from "./modules/values-explorer.js";
 import { $strings } from "./modules/strings.js";
 import { $menu } from "./components/menu.js";
 import { $split } from "./components/split.js";
-import { $tabs } from "./components/tabs.js";
 
 const editor = $editor(16);
 
@@ -52,15 +51,17 @@ const menu = $menu({
 const values = $valuesExplorer(editor);
 const strings = $strings(editor);
 
-document.body.appendChild($.div({ id: "root" },
+document.body.appendChild($.div({ id: "root" }, [
+  menu,
   $split({}, [
-    menu,
     $split({}, [
       editor,
-      $split({}, [
-        values,
-        strings,  
-      ]).setOrientation("vertical"),
+      values,
     ]).setOrientation("horizontal"),
+    strings,
   ]).setOrientation("vertical")
-));
+]));
+
+addEventListener("beforeunload", (event) => {
+  event.preventDefault();
+});

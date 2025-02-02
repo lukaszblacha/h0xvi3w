@@ -87,11 +87,11 @@ export const $tabs = (attributes = {}, content) => {
         1 - (width - e.layerX) / width,
         1 - (height - e.layerY) / height
       ];
-
+  
       if (e.target.parentNode !== e.currentTarget) {
         e.preventDefault();
       }
-
+  
       let className = "drop-center";
       if (px < 0.2) {
         className = "drop-left";
@@ -102,10 +102,12 @@ export const $tabs = (attributes = {}, content) => {
       } else if (py > 0.8) {
         className = "drop-bottom";
       }
-
-      $container.classList.add(className);
-      const classes = Array.from($container.classList).filter(c => c.startsWith("drop-") && c !== className);
-      if (classes.length) $container.classList.remove(classes);
+  
+      if(!$container.classList.contains(className)) {
+        $container.classList.add(className);
+        const classes = Array.from($container.classList).filter(c => c.startsWith("drop-") && c !== className);
+        if (classes.length) $container.classList.remove(classes);
+      }
     },
     dragleave: (e) => {
       $container.classList.remove("drop-top", "drop-left", "drop-right", "drop-bottom", "drop-center");

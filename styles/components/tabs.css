@@ -1,10 +1,9 @@
 .tabs {
   display: flex;
-  flex: 1 1 0;
   flex-direction: column;
-  justify-content: stretch;
   line-height: 20px;
   font-size: 18px;
+  overflow: hidden;
 
   &[bottom] {
     & > *:nth-child(1) {
@@ -35,10 +34,14 @@
   }
 
   .tabs-container {
-    flex: 1 1 0;
+    flex: 1 0 auto;
     display: flex;
-    overflow: auto;
+    overflow: hidden;
     position: relative;
+
+    & > * {
+      flex: 1 1 auto;
+    }
 
     & > *:not(.active-tab) {
       display: none !important;

@@ -16,14 +16,11 @@ export const $editor = (lineWidth = 16) => {
   const { $element } = $panel({ class: "editor", label: "Editor" }, {
     header: [
       $.div({ class: "col-index" }, "offset"),
-      $.div({ class: "spacer" }),
-      $.div({ class: "col-hex" }, headerText),
-      $.div({ class: "spacer" }),
+      $.div({ class: "col-hex" }, headerText.split("").join(" ").concat(" ")),
       $.div({ class: "col-ascii" }, headerText),
     ],
     body: [
       $.div({ class: "col-index" }),
-      $.div({ class: "spacer" }),
       $.div({
         class: "col-hex",
         style: `width:  calc(${lineWidth * 2} * (1ch + var(--hex-letter-spacing)))`,
@@ -31,7 +28,6 @@ export const $editor = (lineWidth = 16) => {
         contenteditable: "plaintext-only",
         autocomplete: "off"
       }),
-      $.div({ class: "spacer" }),
       $.div({
         class: "col-ascii",
         style: `width: ${lineWidth}ch`,
@@ -44,7 +40,7 @@ export const $editor = (lineWidth = 16) => {
   });
 
   const $body = $element.querySelector(".panel-body");
-  const [$index, $hex, $text] = $element.querySelectorAll(".panel-body > :not(.spacer)");
+  const [$index, $hex, $text] = $element.querySelectorAll(".panel-body > *");
   const [$pos, $val, $size, $mode] = $element.querySelectorAll(".panel-footer > *");
 
   let selectionStartOffset = 0;

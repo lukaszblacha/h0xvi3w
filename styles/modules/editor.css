@@ -1,22 +1,21 @@
 .editor {
-  & > * {
-    display: flex;
+  flex: 1 0 auto !important;
 
-    .spacer {
-      width: 15px;
-      flex: 0 0 1;
-    }
+  .panel-header, .panel-body {
+    gap: 20px;
+    justify-content: flex-start;
   }
 
   .panel-header {
     .col-hex {
-      letter-spacing: calc(1ch + 2 * var(--hex-letter-spacing));
+      letter-spacing: var(--hex-letter-spacing);
+      white-space: nowrap;
+      white-space-collapse: preserve;
     }  
   }
 
   .panel-body {
     flex-direction: row;
-    overflow-y: auto;
 
     *::selection {
       background-color: transparent;
@@ -28,7 +27,7 @@
     }  
 
     [contenteditable] {
-      flex-grow: 0;
+      flex: 0 0 auto;
       outline: none;
       caret-color: #FF0000;
       background-color: inherit;

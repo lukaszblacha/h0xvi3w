@@ -1,8 +1,7 @@
-.split:not([vertical]) > .strings {
-  width: 1px;
-}
-
 .strings {
+  min-height: 20vh;
+  min-width: 15vw;
+
   .panel-body {
     display: flex;
     flex-direction: column;
@@ -10,7 +9,9 @@
     gap: 8px;
 
     .filters {
+      display: flex;
       flex: 0 0 auto;
+      gap: 4px;
       background-color: var(--color-input-container-bg);
     
       input[type="search"] {
@@ -29,22 +30,16 @@
     }
 
     .list {
-      display: flex;
-      flex-direction: column;
+      display: block;
       overflow: hidden auto;
     }
 
     .string {
-      flex: 0 0 auto;
       display: block;
       border-radius: 3px;
       padding: .2ch 1ch;
       white-space: nowrap;
       overflow: auto visible;
-  
-      &.hidden {
-        display: none;
-      }
   
       &:hover {
         background-color: rgb(136, 89, 0);
