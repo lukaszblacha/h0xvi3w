@@ -24,6 +24,7 @@ export const $strings = (editor) => {
         str = "";
       }
     }
+    if (str.length) arr.push([str, data.length - str.length]);
     return arr;
   }
 
