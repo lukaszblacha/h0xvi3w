@@ -4,11 +4,13 @@ import { $valuesExplorer } from "./modules/values-explorer.js";
 import { $strings } from "./modules/strings.js";
 import { $menu } from "./components/menu.js";
 import { $split } from "./components/split.js";
+import { DataBufferView } from "./buffer-view.js";
 
 const editor = $editor(16);
 
 function createFile() {
-  editor.openFile(new Uint8Array(Array(16).fill(0)));
+  const buffer = new DataBufferView(new Uint8Array(Array(16).fill(0)));
+  editor.openFile(buffer);
 }
 
 function readBufferFromFile(e) {
@@ -16,7 +18,10 @@ function readBufferFromFile(e) {
   if (!file) return;
 
   const fileReader = new FileReader();
-  fileReader.onload = ({ target }) => editor.openFile(new Uint8Array(target.result), file.name);
+  fileReader.onload = ({ target }) => {
+    const buffer = new DataBufferView(new Uint8Array(target.result));
+    editor.openFile(buffer, file.name);
+  }
   fileReader.readAsArrayBuffer(file);
 }
 

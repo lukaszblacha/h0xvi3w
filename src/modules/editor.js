@@ -1,6 +1,7 @@
 import { $, bindAll } from "../dom.js";
 import { $panel } from "../components/panel.js";
 import { highlight, range, replaceInText, setCaret, setSelection } from "../text.js";
+import { DataBuffer } from "../buffer.js";
 
 const displayValue = (num) =>
   `${num.toString(16).toUpperCase()}h (${num.toString()})`;
@@ -45,13 +46,12 @@ export const $editor = (lineWidth = 16) => {
 
   let selectionStartOffset = 0;
   let selectionEndOffset = 0;
-  let bufferLength = 0;
-  let buffer = new Uint8Array([]);
+  let buffer = new DataBuffer();
   let insertMode = true;
   let fileName;
   
   function getBuffer() {
-    return buffer.subarray(0, bufferLength);
+    return buffer.getBuffer();
   }
 
   let handlers = { select: [], load: [], change: [] };
@@ -64,8 +64,8 @@ export const $editor = (lineWidth = 16) => {
     selectionEndOffset = Math.max(selectionStart, selectionEnd);  
     const collapsed = selectionStart === selectionEnd;
     $pos.innerText = `${collapsed ? "pos" : "start"}: ${displayValue(selectionStartOffset)}`;
-    $val.innerText = selectionStartOffset < bufferLength ? (
-      selectionEndOffset !== selectionStartOffset ? `sel: ${displayValue(selectionEndOffset - selectionStartOffset)}` : `val: ${displayValue(buffer[selectionStartOffset])}`
+    $val.innerText = selectionStartOffset < buffer.length ? (
+      selectionEndOffset !== selectionStartOffset ? `sel: ${displayValue(selectionEndOffset - selectionStartOffset)}` : `val: ${displayValue(buffer.at(selectionStartOffset))}`
     ) : "";
 
     highlight("selection", [
@@ -82,30 +82,12 @@ export const $editor = (lineWidth = 16) => {
   }
 
   function overwriteInBuffer(startOffset, data) {
-    if (bufferLength < startOffset + data.length) {
-      throw new Error("Content too long.");
-    }
     buffer.set(data, startOffset);
     trigger("change", { buffer: getBuffer(), startOffset, endOffset: startOffset + data.length, length: data.length });
   }
 
   function insertInBuffer(startOffset, endOffset, data) {
-    const toRemove = endOffset - startOffset;
-    if (bufferLength + data.length - toRemove > buffer.length) {
-      const newBuffer = new Uint8Array([
-        ...buffer.subarray(0, startOffset),
-        ...data,
-        ...buffer.subarray(endOffset),
-        ...(new Array(1024).fill(0)) // margin to lower the frequency of constructing new buffer
-      ]);
-      buffer = newBuffer;
-    } else {
-      buffer.copyWithin(startOffset + data.length, endOffset);
-      if(data.length) {
-        buffer.set(data, startOffset);
-      }
-    }
-    bufferLength += data.length - toRemove;
+    buffer.insert(data, startOffset, endOffset);
     trigger("change", { buffer: getBuffer(), startOffset, endOffset, length: data.length });
   }
 
@@ -118,11 +100,11 @@ export const $editor = (lineWidth = 16) => {
       case "hex":
         if (!text.match(/^[0-9a-f]*$/i)) return undefined;
         if (offset % 2 !== 0) {
-          const firstByte = u8ToHex(buffer[Math.floor(offset / 2)]);
+          const firstByte = u8ToHex(buffer.at(Math.floor(offset / 2)));
           text = firstByte[0].concat(text);
         }
         if (text.length % 2 !== 0) {
-          const lastByte = u8ToHex(buffer[Math.floor((offset + text.length) / 2)]);
+          const lastByte = u8ToHex(buffer.at(Math.floor((offset + text.length) / 2)));
           text = text.concat(insertMode ? "0" : lastByte[1]);
         }
         return text.match(/.{2}/g).map(hexToU8);
@@ -159,6 +141,7 @@ export const $editor = (lineWidth = 16) => {
         if (insertMode) {
           insertInBuffer(startOffset, endOffset, chunk);
         } else {
+          if (startOffset + chunk.length > buffer.length) return;
           overwriteInBuffer(startOffset, chunk);
         }
         setCaret($node, Math.min(baseOffset, extentOffset) + data.length);
@@ -231,29 +214,30 @@ export const $editor = (lineWidth = 16) => {
       replaceInText($text.firstChild, "", startOffset, startOffset - length);
       replaceInText($hex.firstChild, "", startOffset * 2, (startOffset - length) * 2);
     } else {
-      replaceInText($text.firstChild, Array.from(buffer.subarray(startOffset, startOffset + length)).map(u8ToChar).join(""), startOffset, endOffset);
-      replaceInText($hex.firstChild, Array.from(buffer.subarray(startOffset, startOffset + length)).map(u8ToHex).join(""), startOffset * 2, endOffset * 2);
+      const textChunk = Array.from(buffer.subarray(startOffset, startOffset + length)).map(u8ToChar).join("");
+      replaceInText($text.firstChild, textChunk, startOffset, endOffset);
+      const hexChunk = Array.from(buffer.subarray(startOffset, startOffset + length)).map(u8ToHex).join("");
+      replaceInText($hex.firstChild, hexChunk, startOffset * 2, endOffset * 2);
     }
   });
 
   function setBuffer(buf) {
     buffer = buf;
-    bufferLength = buffer.length;
     document.removeEventListener("selectionchange", onSelectionChange);
 
-    $size.innerText = `size: ${displayValue(bufferLength)}`;
-    const hex = Array.from(buffer).map(u8ToHex);
-    const text = Array.from(buffer).map(u8ToChar);
+    $size.innerText = `size: ${displayValue(buffer.length)}`;
+    const hex = Array.from(buffer.getBuffer()).map(u8ToHex);
+    const text = Array.from(buffer.getBuffer()).map(u8ToChar);
     $hex.innerText = hex.join("");
     $text.innerText = text.join("");
-    $index.innerText = new Array(Math.ceil(bufferLength / lineWidth)).fill(0)
+    $index.innerText = new Array(Math.ceil(buffer.length / lineWidth)).fill(0)
       .map((_, i) => (i * lineWidth)
         .toString(16)
         .padStart(6, 0))
       .join("\n");
 
     document.addEventListener("selectionchange", onSelectionChange);
-    trigger("load", { buffer })
+    trigger("load", { buffer: buffer.getBuffer() })
     setSelection($text.firstChild, 0);
   }
 
