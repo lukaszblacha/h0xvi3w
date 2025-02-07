@@ -108,10 +108,10 @@ export const $tabs = (attributes = {}, content) => {
         if (classes.length) $container.classList.remove(classes);
       }
     },
-    dragleave: (e) => {
+    dragleave() {
       $container.classList.remove("drop-top", "drop-left", "drop-right", "drop-bottom", "drop-center");
     },
-    drop: (e) => {
+    drop() {
       const $source = document.querySelector("[dnd-source]");
       const $parent = $element.parentNode;
 
