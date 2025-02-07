@@ -23,5 +23,5 @@ export function replaceInText($node, replacement, startOffset, endOffset = start
 
 export const highlight = (name, ranges) => {
   // Name corresponds to a highlight definition in CSS
-  CSS.highlights.set(name, new Highlight(...ranges));
+  CSS.highlights.set(name, ranges instanceof Highlight ? ranges : new Highlight(...ranges));
 }

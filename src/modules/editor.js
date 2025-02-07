@@ -1,7 +1,9 @@
 import { $, bindAll } from "../dom.js";
 import { $panel } from "../components/panel.js";
-import { highlight, range, replaceInText, setCaret, setSelection } from "../text.js";
-import { DataBuffer } from "../buffer.js";
+import { highlight, setCaret } from "../utils/text.js";
+import { DataBuffer } from "../structures/buffer.js";
+import { DataWindow } from "../components/window.js";
+import { bindClassMethods } from "../utils/classes.js";
 
 const displayValue = (num) =>
   `${num.toString(16).toUpperCase()}h (${num.toString()})`;
@@ -12,8 +14,31 @@ const charToU8 = (c) => c.charCodeAt(0);
 const u8ToChar = (i) => isPrintableCharacter(i) ? String.fromCharCode(i) : '·';
 const u8ToHex = (i) => i.toString(16).padStart(2, "0");
 
-export const $editor = (lineWidth = 16) => {
+const $editor = (lineWidth = 16, getDataBuffer) => {
   const headerText = Array(lineWidth).fill(0).fill(0).map((_, i) => i.toString(16)).join("").toUpperCase();
+
+  const ascii = new DataWindow({ style: `width: ${lineWidth}ch` }, {
+    class: "col-ascii",
+    spellcheck: false,
+    contenteditable: "plaintext-only",
+    autocomplete: "off"
+  }, {
+    getDataBuffer,
+    renderFn: (arr) => Array.from(arr).map(u8ToChar).join(""),
+    charsPerByte: 1,
+  });
+
+  const hex = new DataWindow({ style: `width:  calc(${lineWidth * 2} * (1ch + var(--hex-letter-spacing)))` }, {
+    class: "col-hex",
+    spellcheck: false,
+    contenteditable: "plaintext-only",
+    autocomplete: "off"
+  }, {
+    getDataBuffer,
+    renderFn: (arr) => Array.from(arr).map(u8ToHex).join(""),
+    charsPerByte: 2,
+  });
+
   const { $element } = $panel({ class: "editor", label: "Editor" }, {
     header: [
       $.div({ class: "col-index" }, "offset"),
@@ -22,77 +47,100 @@ export const $editor = (lineWidth = 16) => {
     ],
     body: [
       $.div({ class: "col-index" }),
-      $.div({
-        class: "col-hex",
-        style: `width:  calc(${lineWidth * 2} * (1ch + var(--hex-letter-spacing)))`,
-        spellcheck: false,
-        contenteditable: "plaintext-only",
-        autocomplete: "off"
-      }),
-      $.div({
-        class: "col-ascii",
-        style: `width: ${lineWidth}ch`,
-        spellcheck: false,
-        contenteditable: "plaintext-only",
-        autocomplete: "off"
-      })
+      hex.window.$outer,
+      ascii.window.$outer
     ],
     footer: [$.div(), $.div(), $.div(), $.div()],
   });
 
-  const $body = $element.querySelector(".panel-body");
-  const [$index, $hex, $text] = $element.querySelectorAll(".panel-body > *");
   const [$pos, $val, $size, $mode] = $element.querySelectorAll(".panel-footer > *");
 
-  let selectionStartOffset = 0;
-  let selectionEndOffset = 0;
-  let buffer = new DataBuffer();
-  let insertMode = true;
-  let fileName;
+  return {
+    $element,
+    $index: $element.querySelector(".panel-body > *"),
+    $body: $element.querySelector(".panel-body"),
+    $pos,
+    $val,
+    $mode,
+    $size,
+    ascii,
+    hex,
+  };
+}
+
+function normalizeSelectionRange(startOffset, endOffset, charsPerByte = 1) {
+  if (startOffset > endOffset) {
+    const tmp = startOffset;
+    startOffset = endOffset;
+    endOffset = tmp;
+  }
+
+  return [Math.floor(startOffset / charsPerByte), Math.ceil(endOffset / charsPerByte)];
+}
+
+export class HexEditor extends EventTarget {
+  constructor(lineWidth = 16) {
+    super();
+    bindClassMethods(this);
+
+    this.lineWidth = lineWidth;
+    this.insertMode = false;
+    this.fileName = "";
+    this.selectionStartOffset = 0;
+    this.selectionEndOffset = 0;
+    this.buffer = new DataBuffer();
+    this.editor = $editor(this.lineHeight, () => this.buffer);
+    this.$element = this.editor.$element;
   
-  function getBuffer() {
-    return buffer.getBuffer();
+    const { $mode, $body, ascii, hex } = this.editor;
+    highlight("selection", [ascii.selectionRange, hex.selectionRange]);
+    bindAll($body, { scroll: this.moveWindowOnScroll });
+    bindAll(hex.window.$element, { beforeinput: this.onBeforeInput });
+    bindAll(ascii.window.$element, { beforeinput: this.onBeforeInput });
+    bindAll(hex, { selectionchange: this.onSelectionChange });
+    bindAll(ascii, { selectionchange: this.onSelectionChange });
+    bindAll($mode, { click: this.switchMode });
   }
 
-  let handlers = { select: [], load: [], change: [] };
-  function trigger(eventName, event = {}) {
-    handlers[eventName].forEach(callback => callback({ eventName, ...event }));
+  moveWindowOnScroll() {
+    const { ascii, hex, $body } = this.editor;
+    ascii.scrollTop = $body.scrollTop;
+    hex.scrollTop = $body.scrollTop;
   }
 
-  function updateSelection(selectionStart, selectionEnd = selectionStart) {
-    selectionStartOffset = Math.min(selectionStart, selectionEnd);
-    selectionEndOffset = Math.max(selectionStart, selectionEnd);  
-    const collapsed = selectionStart === selectionEnd;
-    $pos.innerText = `${collapsed ? "pos" : "start"}: ${displayValue(selectionStartOffset)}`;
-    $val.innerText = selectionStartOffset < buffer.length ? (
-      selectionEndOffset !== selectionStartOffset ? `sel: ${displayValue(selectionEndOffset - selectionStartOffset)}` : `val: ${displayValue(buffer.at(selectionStartOffset))}`
+  getBuffer() {
+    return this.buffer.getBuffer();
+  }
+  
+  updateSelection(start, end = start) {
+    const { buffer } = this;
+    this.selectionStartOffset = Math.min(start, end);
+    this.selectionEndOffset = Math.max(start, end);
+
+    const { $pos, $val, ascii, hex } = this.editor;
+
+    const collapsed = start === end;
+    $pos.innerText = `${collapsed ? "pos" : "start"}: ${displayValue(this.selectionStartOffset)}`;
+    $val.innerText = this.selectionStartOffset < buffer.length ? (
+      this.selectionEndOffset !== this.selectionStartOffset
+        ? `sel: ${displayValue(this.selectionEndOffset - this.selectionStartOffset)}`
+        : `val: ${displayValue(buffer.at(this.selectionStartOffset))}`
     ) : "";
 
-    highlight("selection", [
-      range($hex.firstChild, selectionStartOffset * 2, selectionEndOffset * 2),
-      range($text.firstChild, selectionStartOffset, selectionEndOffset)
-    ]);
+    ascii.setSelection(start, end);
+    hex.setSelection(start, end);
 
-    trigger("select", {
+    this.dispatchEvent(new CustomEvent("select", { detail: {
       buffer,
-      startOffset: selectionStartOffset,
-      endOffset: selectionEndOffset,
-      length: Math.abs(selectionEndOffset - selectionStartOffset),
-    })
+      startOffset: this.selectionStartOffset,
+      endOffset: this.selectionEndOffset,
+      length: this.selectionEndOffset - this.selectionStartOffset,
+    } }));
   }
 
-  function overwriteInBuffer(startOffset, data) {
-    buffer.set(data, startOffset);
-    trigger("change", { buffer: getBuffer(), startOffset, endOffset: startOffset + data.length, length: data.length });
-  }
-
-  function insertInBuffer(startOffset, endOffset, data) {
-    buffer.insert(data, startOffset, endOffset);
-    trigger("change", { buffer: getBuffer(), startOffset, endOffset, length: data.length });
-  }
-
-  function normalizeInput(text, inputType, offset) {
+  normalizeInput(text, inputType, offset) {
     if(!text) return undefined;
+    const { buffer, insertMode } = this;
 
     switch (inputType) {
       case "text":
@@ -112,37 +160,30 @@ export const $editor = (lineWidth = 16) => {
     }
   }
 
-  function normalizeSelectionRange(startOffset, endOffset, charsPerByte = 1) {
-    if (startOffset > endOffset) {
-      const tmp = startOffset;
-      startOffset = endOffset;
-      endOffset = tmp;
-    }
-
-    return [Math.floor(startOffset / charsPerByte), Math.ceil(endOffset / charsPerByte)];
-  }
-
-  function onBeforeInput(e) {
+  onBeforeInput(e) {
     e.preventDefault();
     const { baseOffset, extentOffset, baseNode: $node, extentNode } = document.getSelection();
     if ($node !== extentNode) return;
+    const { hex, ascii } = this.editor;
 
-    const charsPerByte = $node === $hex.firstChild ? 2 : 1;
-    let [startOffset, endOffset] = normalizeSelectionRange(baseOffset, extentOffset, charsPerByte);
+    const window = $node === hex.window.$textNode ? hex : ascii;
+    const charsPerByte = window === hex ? 2 : 1;
+    const windowOffset = window.startOffset;
+    let [startOffset, endOffset] = normalizeSelectionRange(baseOffset + windowOffset, extentOffset + windowOffset, charsPerByte);
 
     switch (e.inputType) {
       case "insertFromDrop":
       case "insertFromPaste":
       case "insertText": {
-        const data = $node === $hex.firstChild ? e.data?.replace(/\s+/gm, "") : e.data;
-        const chunk = normalizeInput(data, $node === $hex.firstChild ? "hex" : "text", Math.min(baseOffset, extentOffset));
+        const data = window === hex ? e.data?.replace(/\s+/gm, "") : e.data;
+        const chunk = this.normalizeInput(data, window === hex ? "hex" : "text", windowOffset + Math.min(baseOffset, extentOffset));
         if (!chunk) return;
 
-        if (insertMode) {
-          insertInBuffer(startOffset, endOffset, chunk);
+        if (this.insertMode) {
+          this.buffer.insert(chunk, startOffset, endOffset);
         } else {
-          if (startOffset + chunk.length > buffer.length) return;
-          overwriteInBuffer(startOffset, chunk);
+          if (startOffset + chunk.length > this.buffer.length) return;
+          this.buffer.set(chunk, startOffset);
         }
         setCaret($node, Math.min(baseOffset, extentOffset) + data.length);
         return;
@@ -163,11 +204,11 @@ export const $editor = (lineWidth = 16) => {
         }
 
         let caretOffset = startOffset;
-        if (insertMode) {
-          insertInBuffer(startOffset, endOffset, []);
+        if (this.insertMode) {
+          this.buffer.delete(startOffset, endOffset - startOffset);
         } else {
           const chunk = new Uint8Array(Array(Math.max(endOffset - startOffset, 1)).fill(0));
-          overwriteInBuffer(startOffset, chunk);
+          this.buffer.set(chunk, startOffset);
           caretOffset = direction > 0 ? endOffset : startOffset;
         }
         setCaret($node, caretOffset * charsPerByte);
@@ -182,86 +223,51 @@ export const $editor = (lineWidth = 16) => {
     }
   }
 
-  function onSelectionChange(e) {
-    const { baseOffset, extentOffset, baseNode: $node, extentNode } = document.getSelection();
-    if ($node !== extentNode) {
-      return;
-    }
-
-    const charsPerByte = $node === $hex.firstChild ? 2 : 1;
-    let [startOffset, endOffset] = normalizeSelectionRange(baseOffset, extentOffset, charsPerByte);
-
-    if ($node === $hex.firstChild) {
-      updateSelection(startOffset, endOffset);
-    } else if ($node === $text.firstChild) {
-      updateSelection(startOffset, endOffset);
-    }
+  onSelectionChange(e) {
+    const { focusNode, startOffset, endOffset } = e.detail;
+    const { hex, ascii } = this.editor;
+    let [start, end] = normalizeSelectionRange(startOffset, endOffset);
+    this.updateSelection(start, end, focusNode === hex.window.$textNode ? hex : ascii);
   }
 
-  function switchMode(newMode) {
-    insertMode = newMode === undefined ? !insertMode : Boolean(newMode);
-    $mode.innerText = insertMode ? "INS" : "OVR";
+  switchMode() {
+    const { $mode } = this.editor;
+    this.insertMode = !this.insertMode;
+    $mode.innerText = this.insertMode ? "INS" : "OVR";
   }
 
-  bindAll($hex, { beforeinput: onBeforeInput });
-  bindAll($text, { beforeinput: onBeforeInput });
-  bindAll($mode, { click: () => switchMode() });
-  switchMode(false);
-
-  // mirror buffer changes in the UI
-  handlers.change.push(function({ startOffset, endOffset, length }) {
-    if (length < 0) {
-      replaceInText($text.firstChild, "", startOffset, startOffset - length);
-      replaceInText($hex.firstChild, "", startOffset * 2, (startOffset - length) * 2);
-    } else {
-      const textChunk = Array.from(buffer.subarray(startOffset, startOffset + length)).map(u8ToChar).join("");
-      replaceInText($text.firstChild, textChunk, startOffset, endOffset);
-      const hexChunk = Array.from(buffer.subarray(startOffset, startOffset + length)).map(u8ToHex).join("");
-      replaceInText($hex.firstChild, hexChunk, startOffset * 2, endOffset * 2);
-    }
-  });
-
-  function setBuffer(buf) {
-    buffer = buf;
-    document.removeEventListener("selectionchange", onSelectionChange);
+  setBuffer(buf) {
+    const { buffer } = this;
+    buffer.from(buf);
+    const { $size, hex, ascii, $index } = this.editor;
 
     $size.innerText = `size: ${displayValue(buffer.length)}`;
-    const hex = Array.from(buffer.getBuffer()).map(u8ToHex);
-    const text = Array.from(buffer.getBuffer()).map(u8ToChar);
-    $hex.innerText = hex.join("");
-    $text.innerText = text.join("");
-    $index.innerText = new Array(Math.ceil(buffer.length / lineWidth)).fill(0)
-      .map((_, i) => (i * lineWidth)
+
+    $index.innerText = new Array(Math.ceil(buffer.length / this.lineWidth)).fill(0)
+      .map((_, i) => (i * this.lineWidth)
         .toString(16)
         .padStart(6, 0))
       .join("\n");
 
-    document.addEventListener("selectionchange", onSelectionChange);
-    trigger("load", { buffer: buffer.getBuffer() })
-    setSelection($text.firstChild, 0);
+      this.dispatchEvent(new CustomEvent("load", { detail: { buffer: buffer.getBuffer() } }));
+
+      hex.render();
+      ascii.render();
+      this.setSelection(0);
   }
 
-  return {
-    $element,
-    on(event, handler) {
-      handlers[event].push(handler);
-    },
-    off(event, handler) {
-      handlers[event] = handlers[event].filter(v => v !== handler);
-    },
-    setSelection(startOffset, endOffset = startOffset) {
-      setSelection($text.firstChild, startOffset, endOffset);
-      // TODO: read line-height from the DOM
-      $body.scrollTop = Math.floor(startOffset / lineWidth) * 20;
-    },
-    getBuffer,
-    setBuffer,
-    getFileName() {
-      return fileName ?? "data.bin";
-    },
-    openFile(buf, name) {
-      fileName = name;
-      setBuffer(buf);
-    }
-  };
+  setSelection(start, end = start) {
+    const { $body } = this.editor;
+    $body.scrollTop = Math.floor(start / this.lineWidth) * 20;
+    this.updateSelection(start, end);
+  }
+
+  getFileName() {
+    return this.fileName ?? "data.bin";
+  }
+
+  openFile(buf, name) {
+    this.fileName = name;
+    this.setBuffer(buf);
+  }
 }

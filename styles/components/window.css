@@ -1,0 +1,11 @@
+.window {
+  position: relative;
+  height: 200%;
+  overflow: hidden;
+
+  & > div {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+}

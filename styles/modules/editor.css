@@ -22,6 +22,10 @@
       background-color: transparent;
     }
 
+    .window {
+      flex-grow: 1;
+    }
+
     .col-hex {
       letter-spacing: var(--hex-letter-spacing);
       text-transform: lowercase;
