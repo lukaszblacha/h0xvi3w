@@ -1,4 +1,4 @@
-import { $, debounce } from "../dom.js";
+import { $, bindAll, debounce } from "../dom.js";
 import { $panel } from "../components/panel.js";
 
 export const $valuesExplorer = (editor) => {
@@ -12,7 +12,7 @@ export const $valuesExplorer = (editor) => {
   function formatBinValue() {
     return value[0]?.toString(2).padStart(8, "0") ?? "◌";
   }
-  
+
   function formatInt(bits, signed) {
     let numChars = Math.round(bits / 8);
     if (value.length < numChars) {
@@ -32,7 +32,10 @@ export const $valuesExplorer = (editor) => {
   }
 
   function formatChar() {
-    return value.length > 0 ? `"${String.fromCharCode(value[0]).charAt(0)}" ${value[0].toString(16).padStart(2,0)}h` : "◌";
+    if (value.length < 1) return "◌";
+    const char = String.fromCharCode(value[0]).charAt(0);
+    const hex = value[0].toString(16).toUpperCase().padStart(2,0);
+    return `"${char}" ${hex}h`;
   }
 
   const render = () => {
@@ -57,13 +60,14 @@ export const $valuesExplorer = (editor) => {
     $body.appendChild(table);
   }
 
-  const setValue = debounce(({ buffer, startOffset }) => {
+  const setValue = debounce((e) => {
+    const { startOffset } = e.detail;
     cancelAnimationFrame(afRid)
-    value = buffer.slice(startOffset, startOffset + 8);
+    value = editor.buffer.subarray(startOffset, startOffset + 8);
     afRid = requestAnimationFrame(render);
-  }, 100);
+  }, 50);
 
-  editor.on("select", setValue);
+  bindAll(editor, { select: setValue });
 
   return {
     $element,

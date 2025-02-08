@@ -1,8 +1,10 @@
+import { bindClassMethods } from "../utils/classes.js";
 import { DataBuffer } from "./buffer.js";
 
 export class DataBufferView extends DataBuffer {
   constructor(data = new Uint8Array([]), startOffset = 0, endOffset = data.length) {
     super(data);
+    bindClassMethods(this);
     this.startOffset = startOffset;
     this.endOffset = endOffset;
     this.length = endOffset - startOffset;

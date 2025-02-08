@@ -7,7 +7,7 @@ export const $strings = (editor) => {
 
   const $body = $.div({ class: "list" });
   const $search = $.input({ type: "search", placeholder: "Search" });
-  const $minLength = $.input({ type: "number", min: 3, max: 15, step: 1, value: 3 });
+  const $minLength = $.input({ type: "number", min: 3, max: 15, step: 1, value: 6 });
   const $caseSensitive = $.input({ type: "checkbox", title: "Match case", label: "Aa" });
 
   function getStrings(data) {
@@ -18,7 +18,7 @@ export const $strings = (editor) => {
       if (chr >= 0x20 && chr < 0x7f) {
         str = str.concat(String.fromCharCode(chr));
       } else if (str.length) {
-        if (str.length >= $minLength.value) {
+        if (str.length >= 3) {
           arr.push([str, i - str.length]);
         }
         str = "";
@@ -33,13 +33,13 @@ export const $strings = (editor) => {
     strArray.forEach(([str, offset]) => {
       const fc = $caseSensitive.checked ? str.includes(filter) : str.toLowerCase().includes(filter.toLowerCase());
       if ((!filter || fc) && str.length >= Number($minLength.value ?? 3)) {
-        $body.appendChild($.div({ class: "string", 'data-start': offset, 'data-end': offset + str.length }, [str]));
+        $body.appendChild($.div({ class: "string", 'data-start': offset, 'data-end': offset + str.length }, [`[0x${offset.toString(16).padStart(5, "0").toUpperCase()}] ${str} `]));
       }
     });
   }
 
   function onSearchTermChange() {
-    clearTimeout(afRid);
+    cancelAnimationFrame(afRid);
     afRid = requestAnimationFrame(() => render($search.value));
   }
 
@@ -56,15 +56,14 @@ export const $strings = (editor) => {
 
   function parseStrings(buffer) {
     strArray = getStrings(buffer);
-    afRid = requestAnimationFrame(() => onSearchTermChange());
+    onSearchTermChange();
   }
 
-  editor.on("load", ({ buffer }) => {
-    $search.value = "";
-    parseStrings(buffer);
-  });
+  const onBufferChange = debounce(() => parseStrings(editor.buffer.getBuffer()), 1000);
 
-  editor.on("change", debounce(({ buffer }) => parseStrings(buffer)), 1000);
+  bindAll(editor.buffer, {
+    change: onBufferChange,
+  });
 
   const { $element } = $panel({ class: "strings", label: "Strings" }, {
     body: [

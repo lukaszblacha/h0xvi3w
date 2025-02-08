@@ -12,7 +12,7 @@
       letter-spacing: var(--hex-letter-spacing);
       white-space: nowrap;
       white-space-collapse: preserve;
-    }  
+    }
   }
 
   .panel-body {
@@ -25,7 +25,7 @@
     .col-hex {
       letter-spacing: var(--hex-letter-spacing);
       text-transform: lowercase;
-    }  
+    }
 
     [contenteditable] {
       flex: 0 0 auto;
@@ -39,7 +39,6 @@
       overflow-wrap: anywhere;
       line-break: anywhere;
       white-space: break-spaces;
-  
     }
   }
 
