@@ -10,47 +10,51 @@ const displayValue = (num) =>
 
 export const isPrintableCharacter = (i) => i >= 0x20 && i < 0x7f;
 const hexToU8 = (s) => parseInt(s, 16);
+const binToU8 = (s) => parseInt(s, 2);
 const charToU8 = (c) => c.charCodeAt(0);
 const u8ToChar = (i) => isPrintableCharacter(i) ? String.fromCharCode(i) : '·';
 const u8ToHex = (i) => i.toString(16).padStart(2, "0");
+const u8ToBin = (i) => i.toString(2).padStart(8, "0");
 
-const $editor = (lineWidth = 16, getDataBuffer) => {
+const $editor = (lineWidth = 16, buffer) => {
   const headerText = Array(lineWidth).fill(0).fill(0).map((_, i) => i.toString(16)).join("").toUpperCase();
 
   const ascii = new DataWindow({
     class: "col-ascii",
-    spellcheck: false,
-    contenteditable: "plaintext-only",
-    autocomplete: "off",
     style: `width: ${lineWidth}ch`,
   }, {
-    getDataBuffer,
-    renderFn: (arr) => Array.from(arr).map(u8ToChar).join(""),
-    charsPerByte: 1,
+    buffer,
+    renderByte: u8ToChar,
   });
 
   const hex = new DataWindow({
     class: "col-hex",
-    spellcheck: false,
-    contenteditable: "plaintext-only",
-    autocomplete: "off",
-    style: `width:  calc(${lineWidth * 2} * (1ch + var(--hex-letter-spacing)))`,
+    style: `width: ${lineWidth * 2}ch`,
   }, {
-    getDataBuffer,
-    renderFn: (arr) => Array.from(arr).map(u8ToHex).join(""),
-    charsPerByte: 2,
+    buffer,
+    renderByte: u8ToHex,
+  });
+
+  const bin = new DataWindow({
+    class: "col-hex",
+    style: `width: ${lineWidth * 8}ch`,
+  }, {
+    buffer,
+    renderByte: u8ToBin,
   });
 
   const { $element } = $panel({ class: "editor", label: "Editor" }, {
     header: [
       $.div({ class: "col-index" }, "offset"),
+      $.div({ class: "col-bin" }, headerText.split("").join("       ").concat("       ")),
       $.div({ class: "col-hex" }, headerText.split("").join(" ").concat(" ")),
       $.div({ class: "col-ascii" }, headerText),
     ],
     body: [
       $.div({ class: "col-index" }),
-      hex.window.$element,
-      ascii.window.$element
+      bin.$element,
+      hex.$element,
+      ascii.$element
     ],
     footer: [$.div(), $.div(), $.div(), $.div()],
   });
@@ -66,18 +70,15 @@ const $editor = (lineWidth = 16, getDataBuffer) => {
     $mode,
     $size,
     ascii,
+    bin,
     hex,
   };
 }
 
-function normalizeSelectionRange(startOffset, endOffset, charsPerByte = 1) {
-  if (startOffset > endOffset) {
-    const tmp = startOffset;
-    startOffset = endOffset;
-    endOffset = tmp;
-  }
-
-  return [Math.floor(startOffset / charsPerByte), Math.ceil(endOffset / charsPerByte)];
+function normalizeSelectionRange(baseOffset, extentOffset, charsPerByte = 1) {
+  const start = Math.min(baseOffset, extentOffset);
+  const end = Math.max(baseOffset, extentOffset);
+  return [Math.floor(start / charsPerByte), Math.ceil(end / charsPerByte)];
 }
 
 export class HexEditor extends EventTarget {
@@ -91,14 +92,16 @@ export class HexEditor extends EventTarget {
     this.selectionStartOffset = 0;
     this.selectionEndOffset = 0;
     this.buffer = new DataBuffer();
-    this.editor = $editor(this.lineHeight, () => this.buffer.getBuffer());
+    this.editor = $editor(this.lineWidth, this.buffer);
     this.$element = this.editor.$element;
 
-    const { $mode, $body, ascii, hex } = this.editor;
-    highlight("selection", [ascii.selectionRange, hex.selectionRange]);
+    const { $mode, $body, ascii, hex, bin } = this.editor;
+    highlight("selection", [ascii.selectionRange, hex.selectionRange, bin.selectionRange]);
     bindAll($body, { scroll: this.moveWindowOnScroll });
-    bindAll(hex.window.$element, { beforeinput: this.onBeforeInput });
-    bindAll(ascii.window.$element, { beforeinput: this.onBeforeInput });
+    bindAll(bin.$element, { beforeinput: this.onBeforeInput });
+    bindAll(hex.$element, { beforeinput: this.onBeforeInput });
+    bindAll(ascii.$element, { beforeinput: this.onBeforeInput });
+    bindAll(bin, { selectionchange: this.onSelectionChange });
     bindAll(hex, { selectionchange: this.onSelectionChange });
     bindAll(ascii, { selectionchange: this.onSelectionChange });
     bindAll($mode, { click: this.switchMode });
@@ -106,23 +109,24 @@ export class HexEditor extends EventTarget {
   }
 
   moveWindowOnScroll() {
-    const { ascii, hex, $body } = this.editor;
+    const { ascii, hex, bin, $body } = this.editor;
     ascii.scrollTop = $body.scrollTop;
     hex.scrollTop = $body.scrollTop;
+    bin.scrollTop = $body.scrollTop;
   }
 
   getBuffer() {
     return this.buffer.getBuffer();
   }
 
-  updateSelection(start, end = start) {
+  updateSelection(base, extent = base) {
     const { buffer } = this;
-    this.selectionStartOffset = Math.min(start, end);
-    this.selectionEndOffset = Math.max(start, end);
+    this.selectionStartOffset = Math.min(base, extent);
+    this.selectionEndOffset = Math.max(base, extent);
 
-    const { $pos, $val, ascii, hex } = this.editor;
+    const { $pos, $val, ascii, hex, bin } = this.editor;
 
-    const collapsed = start === end;
+    const collapsed = Math.abs(base - extent) < 2;
     $pos.innerText = `${collapsed ? "pos" : "start"}: ${displayValue(this.selectionStartOffset)}`;
     $val.innerText = this.selectionStartOffset < buffer.length ? (
       this.selectionEndOffset !== this.selectionStartOffset
@@ -130,8 +134,9 @@ export class HexEditor extends EventTarget {
         : `val: ${displayValue(buffer.at(this.selectionStartOffset))}`
     ) : "";
 
-    ascii.setSelection(start, end);
-    hex.setSelection(start, end);
+    ascii.setSelection(this.selectionStartOffset, this.selectionEndOffset);
+    hex.setSelection(this.selectionStartOffset * 2, this.selectionEndOffset * 2);
+    bin.setSelection(this.selectionStartOffset * 8, this.selectionEndOffset * 8);
 
     this.dispatchEvent(new CustomEvent("select", { detail: {
       buffer,
@@ -142,43 +147,59 @@ export class HexEditor extends EventTarget {
   }
 
   normalizeInput(text, inputType, offset) {
-    if(!text) return undefined;
-    const { buffer, insertMode } = this;
+    const { buffer, insertMode, editor: { hex, bin, ascii } } = this;
+    const activeWindow = inputType === "hex" ? hex : inputType === "bin" ? bin : ascii;
+    const { charsPerByte } = activeWindow;
+    let caret = offset;
+    if (!text) return [undefined, caret];
 
-    switch (inputType) {
-      case "text":
-        return text.split("").map(charToU8);
-      case "hex":
-        if (!text.match(/^[0-9a-f]*$/i)) return undefined;
-        if (offset % 2 !== 0) {
-          const firstByte = u8ToHex(buffer.at(Math.floor(offset / 2)));
-          text = firstByte[0].concat(text);
-        }
-        if (text.length % 2 !== 0) {
-          const lastByte = u8ToHex(buffer.at(Math.floor((offset + text.length) / 2)));
-          text = text.concat(insertMode ? "0" : lastByte[1]);
-        }
-        return text.match(/.{2}/g).map(hexToU8);
-      default: throw new Error(`Unknown input type ${inputType}`);
+    if (inputType === "text") {
+      return [text.split("").map(charToU8), caret + text.length];
     }
+
+    const options = charsPerByte === 8
+      ? { toText: u8ToBin, toByte: binToU8, inputRegex: /^[01]*$/i }
+      : { toText: u8ToHex, toByte: hexToU8, inputRegex: /^[0-9a-f]*$/i };
+
+    if (!text.match(options.inputRegex)) return [undefined, caret];
+
+    caret += text.length;
+    if (offset % charsPerByte !== 0) {
+      const firstByteOffset = Math.floor(offset / charsPerByte);
+      const byte = options.toText(buffer.at(firstByteOffset));
+      const diff = text.length;
+      text = byte.substring(0, offset % charsPerByte).concat(text);
+      offset -= diff;
+    }
+
+    if (text.length % charsPerByte !== 0) {
+      if (insertMode) {
+        text = text.concat(new Array(charsPerByte - text.length % charsPerByte).fill('0').join(""));
+      } else {
+        const lastByteOffset = Math.floor(offset / charsPerByte) + Math.floor(text.length / charsPerByte);
+        const byte = options.toText(buffer.at(lastByteOffset));
+        text = text.concat(byte.substring(text.length % charsPerByte));
+      }
+    }
+
+    return [text.match(new RegExp(`.{${charsPerByte}}`, "g")).map(options.toByte), caret];
   }
 
   onBeforeInput(e) {
     e.preventDefault();
     const { baseOffset, extentOffset, baseNode: $node, extentNode } = document.getSelection();
     if ($node !== extentNode) return;
-    const { hex, ascii } = this.editor;
+    const { bin, hex, ascii } = this.editor;
 
-    const window = $node === hex.window.$textNode ? hex : ascii;
-    const charsPerByte = window === hex ? 2 : 1;
-    let [startOffset, endOffset] = normalizeSelectionRange(baseOffset, extentOffset, charsPerByte);
+    const activeWindow = $node === hex.$textNode ? hex : $node === bin.$textNode ? bin : ascii;
+    let [startOffset, endOffset] = normalizeSelectionRange(baseOffset, extentOffset, activeWindow.charsPerByte);
 
     switch (e.inputType) {
       case "insertFromDrop":
       case "insertFromPaste":
       case "insertText": {
-        const data = window === hex ? e.data?.replace(/\s+/gm, "") : e.data;
-        const chunk = this.normalizeInput(data, window === hex ? "hex" : "text", Math.min(baseOffset, extentOffset));
+        const data = activeWindow === ascii ? e.data : e.data?.replace(/\s+/gm, "");
+        const [chunk, caretOffset] = this.normalizeInput(data, activeWindow === hex ? "hex" : activeWindow === bin ? "bin" : "text", Math.min(baseOffset, extentOffset));
         if (!chunk) return;
 
         if (this.insertMode) {
@@ -187,7 +208,7 @@ export class HexEditor extends EventTarget {
           if (startOffset + chunk.length > this.buffer.length) return;
           this.buffer.set(chunk, startOffset);
         }
-        setCaret($node, Math.min(baseOffset, extentOffset) + data.length);
+        setCaret($node, caretOffset);
         return;
       }
       case "deleteByDrag":
@@ -206,14 +227,15 @@ export class HexEditor extends EventTarget {
         }
 
         let caretOffset = startOffset;
+        const bytesToDelete = endOffset - startOffset;
         if (this.insertMode) {
-          this.buffer.delete(startOffset, endOffset - startOffset);
+          this.buffer.delete(startOffset, bytesToDelete);
         } else {
-          const chunk = new Uint8Array(Array(Math.max(endOffset - startOffset, 1)).fill(0));
+          const chunk = new Uint8Array(Array(Math.max(bytesToDelete, 1)).fill(0));
           this.buffer.set(chunk, startOffset);
           caretOffset = direction > 0 ? endOffset : startOffset;
         }
-        setCaret($node, caretOffset * charsPerByte);
+        setCaret($node, caretOffset * activeWindow.charsPerByte);
         return;
       }
       case "historyUndo":
@@ -227,12 +249,11 @@ export class HexEditor extends EventTarget {
 
   onSelectionChange(e) {
     const { focusNode, startOffset, endOffset } = e.detail;
-    const { hex, ascii } = this.editor;
-    let [start, end] = normalizeSelectionRange(startOffset, endOffset);
-    if (start === end && !this.insertMode) {
-      end = start + 1;
-    }
-    this.updateSelection(start, end, focusNode === hex.window.$textNode ? hex : ascii);
+    const { hex, ascii, bin } = this.editor;
+    const activeWindow = focusNode === hex.$textNode ? hex : focusNode === bin.$textNode ? bin : ascii;
+    const [start, end] = normalizeSelectionRange(startOffset, endOffset, activeWindow.charsPerByte);
+
+    this.updateSelection(start, end);
   }
 
   switchMode() {
@@ -244,7 +265,7 @@ export class HexEditor extends EventTarget {
   setBuffer(buf) {
     const { buffer } = this;
     buffer.from(buf);
-    const { $size, hex, ascii, $index } = this.editor;
+    const { $size, hex, ascii, bin, $index } = this.editor;
 
     $size.innerText = `size: ${displayValue(buffer.length)}`;
 
@@ -257,6 +278,7 @@ export class HexEditor extends EventTarget {
       this.dispatchEvent(new CustomEvent("load", { detail: { buffer: buffer.getBuffer() } }));
 
       hex.render();
+      bin.render();
       ascii.render();
       this.setSelection(0);
   }

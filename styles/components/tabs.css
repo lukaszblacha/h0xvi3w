@@ -1,8 +1,6 @@
 .tabs {
   display: flex;
   flex-direction: column;
-  line-height: 20px;
-  font-size: 18px;
   overflow: hidden;
 
   &[bottom] {
@@ -19,6 +17,7 @@
     display: flex;
     padding: 0 5px 0;
     gap: 1px;
+    line-height: 1.5em;
     font-size: small;
 
     & > li {

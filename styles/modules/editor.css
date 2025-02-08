@@ -8,8 +8,7 @@
   }
 
   .panel-header {
-    .col-hex {
-      letter-spacing: var(--hex-letter-spacing);
+    .col-hex, .col-bin {
       white-space: nowrap;
       white-space-collapse: preserve;
     }
@@ -19,11 +18,10 @@
     flex-direction: row;
 
     *::selection {
-      background-color: transparent;
+      background-color: #F005;
     }
 
     .col-hex {
-      letter-spacing: var(--hex-letter-spacing);
       text-transform: lowercase;
     }
 

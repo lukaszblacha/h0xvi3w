@@ -6,7 +6,7 @@ import { $menu } from "./components/menu.js";
 import { $split } from "./components/split.js";
 import { DataBufferView } from "./structures/buffer-view.js";
 
-const editor = new HexEditor(16);
+const editor = new HexEditor(8);
 
 function createFile() {
   const buffer = new DataBufferView(new Uint8Array(Array(16).fill(0)));

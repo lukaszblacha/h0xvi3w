@@ -5,7 +5,6 @@
   align-items: flex-start;
   gap: 4px;
   padding: 2px 8px;
-  font-family: "courier";
 
   .item, .submenu {
     border: solid 1px transparent;
