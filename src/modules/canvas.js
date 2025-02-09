@@ -39,11 +39,12 @@ export const $canvas = (editor) => {
 
   function onPixelClick({ offsetX, offsetY, target }) {
     const width = parseInt($width.value);
+    const offset = parseInt($offset.value);
     const unit = canvas.scrollWidth / width;
     const x = Math.floor(offsetX / unit);
     const y = Math.floor((offsetY + target.scrollTop) / unit);
 
-    const index = x + y * width;
+    const index = x + y * width + offset;
     if (index >= 0 && index < editor.buffer.length) {
       editor.setSelection(index, index + 1);
     }
@@ -51,9 +52,10 @@ export const $canvas = (editor) => {
 
   function onSelect(e) {
     const { startOffset } = e.detail;
+    const offset = parseInt($offset.value);
     const width = parseInt($width.value);
     const unit = Math.floor(canvas.scrollWidth / width);
-    $body.scrollTop = Math.floor(startOffset / width) * unit;
+    $body.scrollTop = Math.floor((startOffset - offset) / width) * unit;
   }
 
   bindAll(editor.buffer, { change: onChange });
