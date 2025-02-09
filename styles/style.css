@@ -6,6 +6,7 @@
 @import url("modules/editor.css");
 @import url("modules/strings.css");
 @import url("modules/values-explorer.css");
+@import url("modules/canvas.css");
 
 * {
   scrollbar-width: none;

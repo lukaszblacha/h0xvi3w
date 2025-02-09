@@ -1,0 +1,33 @@
+.canvas {
+  min-height: 20vh;
+  min-width: 15vw;
+
+  .panel-body {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 8px;
+    align-items: center;
+    overflow: hidden;
+
+    .filters {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 4px;
+      width: 100%;
+      align-items: center;
+      background-color: var(--color-input-container-bg);
+
+      input[type="number"] {
+        width: 50px;
+        padding-left: 1px;
+        padding-right: 0;
+      }
+    }
+
+    .canvas-body {
+      width: 100%;
+      overflow: auto;
+    }
+  }
+}

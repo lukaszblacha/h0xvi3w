@@ -2,11 +2,12 @@ import { $, bindAll } from "./dom.js";
 import { HexEditor } from "./modules/editor.js";
 import { $valuesExplorer } from "./modules/values-explorer.js";
 import { $strings } from "./modules/strings.js";
+import { $canvas } from "./modules/canvas.js";
 import { $menu } from "./components/menu.js";
 import { $split } from "./components/split.js";
 import { DataBufferView } from "./structures/buffer-view.js";
 
-const editor = new HexEditor(8);
+const editor = new HexEditor(16);
 
 function createFile() {
   const buffer = new DataBufferView(new Uint8Array(Array(16).fill(0)));
@@ -55,13 +56,14 @@ const menu = $menu({
 
 const values = $valuesExplorer(editor);
 const strings = $strings(editor);
+const canvas = $canvas(editor);
 
 document.body.appendChild($.div({ id: "root" }, [
   menu,
   $split({}, [
     $split({}, [
       editor,
-      values,
+      $split({}, [values, canvas]).setOrientation("vertical"),
     ]).setOrientation("horizontal"),
     strings,
   ]).setOrientation("vertical")

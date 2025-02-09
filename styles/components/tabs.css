@@ -52,13 +52,12 @@
       border-radius: 6px;
       background: #FFAA0055;
       content: "";
-      inset: 0;
       pointer-events: none;
       transition: left 200ms, right 200ms, top 200ms, bottom 200ms;
     }
 
     &.drop-center:after {
-      inset: 5%;
+      inset: 0;
     }
     &.drop-right:after {
       inset: 0;
