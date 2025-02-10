@@ -3,8 +3,8 @@ import { HexEditor } from "./modules/editor.js";
 import { ValuesExplorer } from "./modules/values-explorer.js";
 import { Strings } from "./modules/strings.js";
 import { Canvas } from "./modules/canvas.js";
-import { $menu } from "./components/menu.js";
-import { $split } from "./components/split.js";
+import { MainMenu } from "./components/menu.js";
+import { Split } from "./components/split.js";
 import { DataBufferView } from "./structures/buffer-view.js";
 
 const editor = new HexEditor(16);
@@ -40,7 +40,7 @@ function saveFile() {
 const $file = $.input({ type: "file" });
 bindAll($file, { change: readBufferFromFile });
 
-const menu = $menu({
+const menu = new MainMenu({
   items: [
     { label: "?", action: () => alert('notimpl') },
     { label: "File", items: [
@@ -64,10 +64,10 @@ const canvas = new Canvas(editor);
 
 document.body.appendChild($.div({ id: "root" }, [
   menu,
-  $split({}, [
-    $split({}, [
+  new Split({}, [
+    new Split({}, [
       editor,
-      $split({}, [values, canvas]).setOrientation("vertical"),
+      new Split({}, [values, canvas]).setOrientation("vertical"),
     ]).setOrientation("horizontal"),
     strings,
   ]).setOrientation("vertical")

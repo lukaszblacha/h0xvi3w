@@ -1,5 +1,5 @@
 import { $, bindAll, unbindAll, debounce } from "../dom.js";
-import { $panel } from "../components/panel.js";
+import { Panel } from "../components/panel.js";
 import { bindClassMethods } from "../utils/classes.js";
 
 function formatBinValue(value) {
@@ -31,9 +31,12 @@ function formatChar(value) {
   return `"${char}" ${hex}h`;
 }
 
-export class ValuesExplorer extends EventTarget {
+export class ValuesExplorer extends Panel {
   constructor(editor) {
-    super();
+    super(
+      { class: "values-explorer", label: "Values explorer" },
+      { body: [], footer: [$.div()] }
+    );
     bindClassMethods(this);
     this.setValue = debounce(this.setValue, 50).bind(this);
 
@@ -41,13 +44,8 @@ export class ValuesExplorer extends EventTarget {
     this.bigEndian = false;
     this.value = [];
 
-    this.$bigEndian = $.div();
-    this.$element = $panel(
-      { class: "values-explorer", label: "Values explorer" },
-      { body: [], footer: [this.$bigEndian] }
-    ).$element;
-
     this.$body = this.$element.querySelector(".panel-body");
+    this.$bigEndian = this.$element.querySelector(".panel-footer > div");
 
     bindAll(this.editor, { select: this.setValue });
     bindAll(this.$bigEndian, { click: this.switchEndianness });

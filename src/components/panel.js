@@ -1,17 +1,19 @@
 import { $, cn } from "../dom.js";
-import { $tabs } from "./tabs.js";
+import { Tabs } from "./tabs.js";
 
-export const $panel = (attributes = {}, { header, body, footer } = {}) => {
-  const { $element } = $tabs({}, [
-    $.div(
-      { ...attributes, class: cn("panel", attributes.class) },
-      [
-        header && $.div({ class: "panel-header" }, header),
-        body && $.div({ class: "panel-body" }, body),
-        footer && $.div({ class: "panel-footer" }, footer),
-      ]
-    )
-  ]);
+export class Panel extends EventTarget {
+  constructor(attributes = {}, { header, body, footer } = {}) {
+    super();
 
-  return { $element };
-};
+    this.$element = new Tabs({}, [
+      $.div(
+        { ...attributes, class: cn("panel", attributes.class) },
+        [
+          header && $.div({ class: "panel-header" }, header),
+          body && $.div({ class: "panel-body" }, body),
+          footer && $.div({ class: "panel-footer" }, footer),
+        ]
+      )
+    ]).$element;
+  }
+}

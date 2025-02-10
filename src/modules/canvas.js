@@ -1,28 +1,31 @@
 import { $, bindAll, unbindAll, debounce } from "../dom.js";
-import { $panel } from "../components/panel.js";
+import { Panel } from "../components/panel.js";
 import { bindClassMethods } from "../utils/classes.js";
 
-export class Canvas extends EventTarget {
+export class Canvas extends Panel {
   constructor(editor) {
-    super();
+    super({ class: "canvas", label: "Canvas" }, {
+      body: [
+        $.div({ class: "filters" }, [
+          "Offset:",
+          $.input({ type: "number", min: 0, step: 1, value: 0 }),
+          "Width:",
+          $.input({ type: "number", min: 2, step: 1, value: 100 })
+        ]),
+        $.div({ class: "canvas-body" }, [$("canvas")])
+      ],
+    });
     bindClassMethods(this);
     this.onChange = debounce(this.onChange, 200).bind(this);
 
     this.editor = editor;
-    this.$offset = $.input({ type: "number", min: 0, step: 1, value: 0 });
-    this.$width = $.input({ type: "number", min: 2, step: 1, value: 100 });
-    this.$body = $.div({ class: "canvas-body" }, [$("canvas")]);
+    [this.$offset, this.$width] = this.$element.querySelectorAll("input");
+    this.$body = this.$element.querySelector(".canvas-body");
     this.$canvas = this.$body.querySelector("canvas");
     this.ctx = this.$canvas.getContext("2d");
     this.resizeObserver = new ResizeObserver(this.onChange);
 
     const { $offset, $width, $body, onChange, onPixelClick, onSelect, resizeObserver } = this;
-    this.$element = $panel({ class: "canvas", label: "Canvas" }, {
-      body: [
-        $.div({ class: "filters" }, ["Offset:", $offset, "Width:", $width]),
-        $body
-      ],
-    }).$element;
 
     bindAll(editor.buffer, { change: onChange });
     bindAll($offset, { change: onChange });

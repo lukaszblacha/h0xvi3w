@@ -19,6 +19,8 @@
     gap: 1px;
     line-height: 1.5em;
     font-size: small;
+    overflow-x: auto;
+    white-space: nowrap;
 
     & > li {
       border: solid 1px var(--color-mild-text);

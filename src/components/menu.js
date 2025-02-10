@@ -1,7 +1,7 @@
 import { $, cn } from "../dom.js";
 
 const toMenuItems = (items) => {
-  if (!Array.isArray(items)) { return [] };
+  if (!Array.isArray(items)) return [];
 
   return items.map((item) => {
     const items = toMenuItems(item.items);
@@ -20,8 +20,9 @@ const toMenuItems = (items) => {
   });
 }
 
-export const $menu = (obj) => {
-  return {
-    $element: $.ul({ class: cn("menu", "main-menu") }, toMenuItems(obj.items))
-  };
+export class MainMenu extends EventTarget {
+  constructor(obj) {
+    super();
+    this.$element = $.ul({ class: cn("menu", "main-menu") }, toMenuItems(obj.items));
+  }
 }

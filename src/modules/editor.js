@@ -1,5 +1,5 @@
 import { $, bindAll } from "../dom.js";
-import { $panel } from "../components/panel.js";
+import { Panel } from "../components/panel.js";
 import { highlight, setCaret } from "../utils/text.js";
 import { DataBuffer } from "../structures/buffer.js";
 import { DataWindow } from "../components/window.js";
@@ -43,11 +43,11 @@ const $editor = (lineWidth = 16, buffer) => {
     renderByte: u8ToBin,
   });
 
-  const { $element } = $panel({ class: "editor", label: "Editor" }, {
+  const { $element } = new Panel({ class: "editor", label: "Editor" }, {
     header: [
       $.div({ class: "col-index" }, "offset"),
-      $.div({ class: "col-bin" }, headerText.split("").join("       ").concat("       ")),
-      $.div({ class: "col-hex" }, headerText.split("").join(" ").concat(" ")),
+      $.div({ class: "col-bin" }, headerText.split("").map((c) => `${c}       `).join("")),
+      $.div({ class: "col-hex" }, headerText.split("").map((c) => `${c} `).join("")),
       $.div({ class: "col-ascii" }, headerText),
     ],
     body: [

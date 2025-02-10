@@ -1,27 +1,27 @@
 import { $, bindAll, unbindAll, debounce } from "../dom.js";
-import { $panel } from "../components/panel.js";
+import { Panel } from "../components/panel.js";
 import { bindClassMethods } from "../utils/classes.js";
 
-export class Strings extends EventTarget{
+export class Strings extends Panel {
   constructor(editor) {
-    super();
+    super({ class: "strings", label: "Strings" }, {
+      body: [
+        $.div({ class: "filters" }, [
+          $.input({ type: "search", placeholder: "Search" }),
+          $.input({ type: "number", min: 3, max: 15, step: 1, value: 6 }),
+          $.input({ type: "checkbox", title: "Match case", label: "Aa" })
+        ]),
+        $.div({ class: "list" })
+      ],
+    });
     bindClassMethods(this);
     this.onBufferChange = debounce(this.onBufferChange, 500);
 
     this.strArray = [];
     this.editor = editor;
 
-    this.$body = $.div({ class: "list" });
-    this.$search = $.input({ type: "search", placeholder: "Search" });
-    this.$minLength = $.input({ type: "number", min: 3, max: 15, step: 1, value: 6 });
-    this.$caseSensitive = $.input({ type: "checkbox", title: "Match case", label: "Aa" });
-
-    this.$element = $panel({ class: "strings", label: "Strings" }, {
-      body: [
-        $.div({ class: "filters" }, [this.$search, this.$minLength, this.$caseSensitive]),
-        this.$body
-      ],
-    }).$element;
+    this.$body = this.$element.querySelector(".list");
+    [this.$search, this.$minLength, this.$caseSensitive] = this.$element.querySelectorAll("input");
 
     const { $body, $search, $minLength, $caseSensitive, onStringClick, onSearchTermChange, onBufferChange } = this;
     bindAll($body, { click: onStringClick });
