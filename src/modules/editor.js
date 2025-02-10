@@ -88,7 +88,7 @@ export class HexEditor extends EventTarget {
 
     this.lineWidth = lineWidth;
     this.insertMode = true;
-    this.fileName = "";
+    this.fileName = "data.bin";
     this.selectionStartOffset = 0;
     this.selectionEndOffset = 0;
     this.buffer = new DataBuffer();
@@ -288,10 +288,6 @@ export class HexEditor extends EventTarget {
     const { $body } = this.editor;
     $body.scrollTop = Math.floor(start / this.lineWidth) * 20;
     this.updateSelection(start, end);
-  }
-
-  getFileName() {
-    return this.fileName ?? "data.bin";
   }
 
   openFile(buf, name) {

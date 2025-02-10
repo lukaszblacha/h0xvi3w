@@ -38,7 +38,7 @@ export class ValuesExplorer extends Panel {
       { body: [], footer: [$.div()] }
     );
     bindClassMethods(this);
-    this.setValue = debounce(this.setValue, 50).bind(this);
+    this.setValue = debounce(this.setValue, 30);
 
     this.editor = editor;
     this.bigEndian = false;
@@ -55,6 +55,7 @@ export class ValuesExplorer extends Panel {
   destroy() {
     unbindAll(this.editor, { select: this.setValue });
     unbindAll(this.$bigEndian, { click: this.switchEndianness });
+    super.destroy();
   }
 
   render() {

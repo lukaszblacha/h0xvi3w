@@ -15,7 +15,7 @@ export class Strings extends Panel {
       ],
     });
     bindClassMethods(this);
-    this.onBufferChange = debounce(this.onBufferChange, 500);
+    this.onBufferChange = debounce(this.onBufferChange, 200);
 
     this.strArray = [];
     this.editor = editor;
@@ -29,6 +29,8 @@ export class Strings extends Panel {
     bindAll($minLength, { change: onSearchTermChange });
     bindAll($caseSensitive, { change: onSearchTermChange });
     bindAll(editor.buffer, { change: onBufferChange });
+
+    onBufferChange();
   }
 
   destroy() {
@@ -38,6 +40,7 @@ export class Strings extends Panel {
     unbindAll($minLength, { change: onSearchTermChange });
     unbindAll($caseSensitive, { change: onSearchTermChange });
     unbindAll(editor.buffer, { change: onBufferChange });
+    super.destroy();
   }
 
   render(filter = "") {

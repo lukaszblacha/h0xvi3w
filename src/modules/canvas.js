@@ -10,7 +10,7 @@ export class Canvas extends Panel {
           "Offset:",
           $.input({ type: "number", min: 0, step: 1, value: 0 }),
           "Width:",
-          $.input({ type: "number", min: 2, step: 1, value: 100 })
+          $.input({ type: "number", min: 3, step: 1, value: 50 })
         ]),
         $.div({ class: "canvas-body" }, [$("canvas")])
       ],
@@ -25,24 +25,23 @@ export class Canvas extends Panel {
     this.ctx = this.$canvas.getContext("2d");
     this.resizeObserver = new ResizeObserver(this.onChange);
 
-    const { $offset, $width, $body, onChange, onPixelClick, onSelect, resizeObserver } = this;
+    const { $offset, $width, $body, onChange, onPixelClick, resizeObserver } = this;
 
     bindAll(editor.buffer, { change: onChange });
     bindAll($offset, { change: onChange });
     bindAll($width, { change: onChange });
     bindAll($body, { click: onPixelClick });
-    bindAll(editor, { select: onSelect });
     resizeObserver.observe($body);
   }
 
   destroy() {
-    const { editor, $offset, $width, $body, onChange, onPixelClick, onSelect, resizeObserver } = this;
+    const { editor, $offset, $width, $body, onChange, onPixelClick, resizeObserver } = this;
     unbindAll(editor.buffer, { change: onChange });
     unbindAll($offset, { change: onChange });
     unbindAll($width, { change: onChange });
     unbindAll($body, { click: onPixelClick });
-    unbindAll(editor, { select: onSelect });
     resizeObserver.unobserve(this.$body);
+    super.destroy();
   }
 
   render() {
@@ -85,14 +84,5 @@ export class Canvas extends Panel {
     if (index >= 0 && index < editor.buffer.length) {
       editor.setSelection(index, index + 1);
     }
-  }
-
-  onSelect(e) {
-    const { startOffset } = e.detail;
-    const { $offset, $width, $canvas, $body } = this;
-    const offset = parseInt($offset.value);
-    const width = parseInt($width.value);
-    const unit = Math.floor($canvas.scrollWidth / width);
-    $body.scrollTop = Math.floor((startOffset - offset) / width) * unit;
   }
 }

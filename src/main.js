@@ -4,7 +4,7 @@ import { ValuesExplorer } from "./modules/values-explorer.js";
 import { Strings } from "./modules/strings.js";
 import { Canvas } from "./modules/canvas.js";
 import { MainMenu } from "./components/menu.js";
-import { Split } from "./components/split.js";
+import { Tabs } from "./components/tabs.js";
 import { DataBufferView } from "./structures/buffer-view.js";
 
 const editor = new HexEditor(16);
@@ -14,7 +14,7 @@ function createFile() {
   editor.openFile(buffer);
 }
 
-function readBufferFromFile(e) {
+function openFile(e) {
   const file = e.target.files?.[0];
   if (!file) return;
 
@@ -27,9 +27,10 @@ function readBufferFromFile(e) {
 }
 
 function saveFile() {
+  if (!window.confirm(`Download file "${editor.fileName}"?`)) return;
   const blob = new Blob([editor.getBuffer()], { type: "application/octet-stream" });
   const url = window.URL.createObjectURL(blob);
-  const link = $.a({ href: url, download: editor.getFileName() });
+  const link = $.a({ href: url, download: editor.fileName });
   document.body.appendChild(link);
   link.style = 'display: none';
   link.click();
@@ -38,7 +39,28 @@ function saveFile() {
 }
 
 const $file = $.input({ type: "file" });
-bindAll($file, { change: readBufferFromFile });
+bindAll($file, { change: openFile });
+
+const windows = {
+  "strings": { active: false, createWindow: (e) => new Strings(e) },
+  "canvas": { active: false, createWindow: (e) => new Canvas(e) },
+  "values-explorer": { active: false, createWindow: (e) => new ValuesExplorer(e) },
+};
+
+function toggleWindow(name) {
+  if (!windows[name]) return;
+  const cfg = windows[name];
+  if (cfg.active) {
+    cfg.window.destroy?.();
+    cfg.window.$element.parentNode?.removeChild(this.$element);
+    cfg.active = false;
+    delete cfg.window;
+  } else {
+    cfg.window = cfg.createWindow(editor);
+    document.querySelector(".tabs-container").appendChild(cfg.window.$element);
+    cfg.active = true;
+  }
+}
 
 const menu = new MainMenu({
   items: [
@@ -54,23 +76,17 @@ const menu = new MainMenu({
         { label: 'Hexadecimal', action: () => editor.toggleView("hex") },
         { label: 'ASCII', action: () => editor.toggleView("ascii") },
       ] },
-    { label: "Window", action: () => alert('notimpl') },
+    { label: "Window", items: [
+        { label: 'Values explorer', action: () => toggleWindow("values-explorer") },
+        { label: 'Strings', action: () => toggleWindow("strings") },
+        { label: 'Canvas', action: () => toggleWindow("canvas") },
+      ] },
   ]
 });
 
-const values = new ValuesExplorer(editor);
-const strings = new Strings(editor);
-const canvas = new Canvas(editor);
-
 document.body.appendChild($.div({ id: "root" }, [
   menu,
-  new Split({}, [
-    new Split({}, [
-      editor,
-      new Split({}, [values, canvas]).setOrientation("vertical"),
-    ]).setOrientation("horizontal"),
-    strings,
-  ]).setOrientation("vertical")
+  new Tabs({}, [editor]),
 ]));
 
 addEventListener("beforeunload", (event) => {
