@@ -36,7 +36,7 @@ const $editor = (lineWidth = 16, buffer) => {
   });
 
   const bin = new DataWindow({
-    class: "col-hex",
+    class: "col-bin",
     style: `width: ${lineWidth * 8}ch`,
   }, {
     buffer,
@@ -94,6 +94,7 @@ export class HexEditor extends EventTarget {
     this.buffer = new DataBuffer();
     this.editor = $editor(this.lineWidth, this.buffer);
     this.$element = this.editor.$element;
+    this.views = { bin: true, hex: true, ascii: true };
 
     const { $mode, $body, ascii, hex, bin } = this.editor;
     highlight("selection", [ascii.selectionRange, hex.selectionRange, bin.selectionRange]);
@@ -296,5 +297,16 @@ export class HexEditor extends EventTarget {
   openFile(buf, name) {
     this.fileName = name;
     this.setBuffer(buf);
+  }
+
+  toggleView(name) {
+    if(name in this.views) {
+      const visible = !this.views[name];
+      this.views[name] = visible;
+
+      Array
+        .from(document.querySelectorAll(`.col-${name}`))
+        .map($el => $el.style.display = visible ? "block" : "none");
+    }
   }
 }

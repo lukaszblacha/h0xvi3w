@@ -2,6 +2,10 @@
   min-height: 20vh;
   min-width: 15vw;
 
+  .panel-body {
+    align-items: flex-start;
+  }
+
   table {
     width: 100%;
   }

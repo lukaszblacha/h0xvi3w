@@ -1,6 +1,11 @@
+.split[vertical]:has(.canvas) .tabs:has(.canvas) {
+  flex-grow: 1;
+}
+
 .canvas {
   min-height: 20vh;
   min-width: 15vw;
+  max-width: 240px;
 
   .panel-body {
     display: flex;

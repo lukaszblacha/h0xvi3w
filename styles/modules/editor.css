@@ -1,6 +1,15 @@
+.split:has(.editor) {
+  flex-grow: 1;
+}
+
+.tabs:has(.editor) {
+  flex-grow: 1;
+}
+
 .editor {
+  max-width: 85vw;
   min-height: 50vh;
-  flex: 1 0 auto !important;
+  flex: 1 0 100% !important;
 
   .panel-header, .panel-body {
     gap: 20px;

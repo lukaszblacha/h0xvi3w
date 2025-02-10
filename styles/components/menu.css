@@ -31,7 +31,7 @@
 .menu {
   .item {
     background-color: var(--color-input-container-bg);
-    padding: .2ch .5ch;
+    padding: .5ch 1ch;
     line-height: 1.3em;
     position: relative;
 

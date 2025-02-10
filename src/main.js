@@ -1,8 +1,8 @@
 import { $, bindAll } from "./dom.js";
 import { HexEditor } from "./modules/editor.js";
-import { $valuesExplorer } from "./modules/values-explorer.js";
-import { $strings } from "./modules/strings.js";
-import { $canvas } from "./modules/canvas.js";
+import { ValuesExplorer } from "./modules/values-explorer.js";
+import { Strings } from "./modules/strings.js";
+import { Canvas } from "./modules/canvas.js";
 import { $menu } from "./components/menu.js";
 import { $split } from "./components/split.js";
 import { DataBufferView } from "./structures/buffer-view.js";
@@ -49,21 +49,25 @@ const menu = $menu({
       { label: 'Save', action: saveFile },
     ]},
     { label: "Edit", action: () => alert('notimpl') },
-    { label: "View", action: () => alert('notimpl') },
+    { label: "View", items: [
+        { label: 'Binary', action: () => editor.toggleView("bin") },
+        { label: 'Hexadecimal', action: () => editor.toggleView("hex") },
+        { label: 'ASCII', action: () => editor.toggleView("ascii") },
+      ] },
     { label: "Window", action: () => alert('notimpl') },
   ]
 });
 
-const values = $valuesExplorer(editor);
-const strings = $strings(editor);
-const canvas = $canvas(editor);
+const values = new ValuesExplorer(editor);
+const strings = new Strings(editor);
+const canvas = new Canvas(editor);
 
 document.body.appendChild($.div({ id: "root" }, [
   menu,
   $split({}, [
     $split({}, [
-      $split({}, [values, canvas]).setOrientation("vertical"),
       editor,
+      $split({}, [values, canvas]).setOrientation("vertical"),
     ]).setOrientation("horizontal"),
     strings,
   ]).setOrientation("vertical")

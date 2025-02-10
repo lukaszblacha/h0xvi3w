@@ -1,81 +1,98 @@
-import { $, bindAll, debounce } from "../dom.js";
+import { $, bindAll, unbindAll, debounce } from "../dom.js";
 import { $panel } from "../components/panel.js";
+import { bindClassMethods } from "../utils/classes.js";
 
-export const $valuesExplorer = (editor) => {
-  let value = [];
-  let bigEndian = true;
-  let $body = $.div();
-  let afRid;
+function formatBinValue(value) {
+  return value[0]?.toString(2).padStart(8, "0") ?? "◌";
+}
 
-  const { $element } = $panel({ class: "values-explorer", label: "Values explorer" }, { body: [$body] });
+function formatInt(value, bits, signed, bigEndian) {
+  let numChars = Math.round(bits / 8);
+  if (value.length < numChars) {
+    return "◌";
+  }
+  const buf = value.slice(0, numChars);
+  if (!bigEndian) buf.reverse();
 
-  function formatBinValue() {
-    return value[0]?.toString(2).padStart(8, "0") ?? "◌";
+  let val = 0n;
+  for (let i in buf) {
+    val = val * 256n + BigInt(buf[i]);
+  }
+  if (signed && val >= BigInt((2 ** bits) >> 1)) {
+    val = BigInt(-(2 ** bits)) + val;
+  }
+  return val;
+}
+
+function formatChar(value) {
+  if (value.length < 1) return "◌";
+  const char = String.fromCharCode(value[0]).charAt(0);
+  const hex = value[0].toString(16).toUpperCase().padStart(2,0);
+  return `"${char}" ${hex}h`;
+}
+
+export class ValuesExplorer extends EventTarget {
+  constructor(editor) {
+    super();
+    bindClassMethods(this);
+    this.setValue = debounce(this.setValue, 50).bind(this);
+
+    this.editor = editor;
+    this.bigEndian = false;
+    this.value = [];
+
+    this.$bigEndian = $.div();
+    this.$element = $panel(
+      { class: "values-explorer", label: "Values explorer" },
+      { body: [], footer: [this.$bigEndian] }
+    ).$element;
+
+    this.$body = this.$element.querySelector(".panel-body");
+
+    bindAll(this.editor, { select: this.setValue });
+    bindAll(this.$bigEndian, { click: this.switchEndianness });
+    this.switchEndianness();
   }
 
-  function formatInt(bits, signed) {
-    let numChars = Math.round(bits / 8);
-    if (value.length < numChars) {
-      return "◌";
-    }
-    const buf = value.slice(0, numChars);
-    if (!bigEndian) buf.reverse();
-
-    let val = 0n;
-    for (let i in buf) {
-      val = val * 256n + BigInt(buf[i]);
-    }
-    if (signed && val >= BigInt((2 ** bits) >> 1)) {
-      val = BigInt(-(2 ** bits)) + val;
-    }
-    return val;
+  destroy() {
+    unbindAll(this.editor, { select: this.setValue });
+    unbindAll(this.$bigEndian, { click: this.switchEndianness });
   }
 
-  function formatChar() {
-    if (value.length < 1) return "◌";
-    const char = String.fromCharCode(value[0]).charAt(0);
-    const hex = value[0].toString(16).toUpperCase().padStart(2,0);
-    return `"${char}" ${hex}h`;
-  }
-
-  const render = () => {
+  render() {
+    const { value, $body, bigEndian } = this;
     $body.innerText = "";
 
     const table = $.table({}, [
-      ["bin", formatBinValue()],
-      ["chr", formatChar()],
-      ["i8", formatInt(8, true)],
-      ["u8", formatInt(8, false)],
-      ["i16", formatInt(16, true)],
-      ["u16", formatInt(16, false)],
-      ["i32", formatInt(32, true)],
-      ["u32", formatInt(32, false)],
-      ["i64", formatInt(64, true)],
-      ["u64", formatInt(64, false)],
+      ["bin", formatBinValue(value)],
+      ["chr", formatChar(value)],
+      ["i8", formatInt(value, 8, true, bigEndian)],
+      ["u8", formatInt(value, 8, false, bigEndian)],
+      ["i16", formatInt(value, 16, true, bigEndian)],
+      ["u16", formatInt(value, 16, false, bigEndian)],
+      ["i32", formatInt(value, 32, true, bigEndian)],
+      ["u32", formatInt(value, 32, false, bigEndian)],
+      ["i64", formatInt(value, 64, true, bigEndian)],
+      ["u64", formatInt(value, 64, false, bigEndian)],
       ].map(
         ([name, value]) => $.tr({}, [$.td({}, [name]), $.td({}, [String(value)])])
       )
     );
 
-    $body.appendChild(table);
+    this.$body.appendChild(table);
   }
 
-  const setValue = debounce((e) => {
+  switchEndianness() {
+    this.bigEndian = !this.bigEndian;
+    const { bigEndian, $bigEndian, render } = this;
+    $bigEndian.innerText = bigEndian ? "BIG" : "LIT";
+    render();
+  }
+
+  setValue(e) {
     const { startOffset } = e.detail;
-    cancelAnimationFrame(afRid)
-    value = editor.buffer.subarray(startOffset, startOffset + 8);
-    afRid = requestAnimationFrame(render);
-  }, 50);
-
-  bindAll(editor, { select: setValue });
-
-  return {
-    $element,
-    setBigEndian(v) {
-      if (v !== bigEndian) {
-        bigEndian = v;
-        setValue(value);
-      }
-    },
-  };
+    cancelAnimationFrame(this.afRid);
+    this.value = this.editor.buffer.subarray(startOffset, startOffset + 8);
+    this.afRid = requestAnimationFrame(this.render);
+  }
 }

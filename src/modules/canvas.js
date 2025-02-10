@@ -1,25 +1,58 @@
-import { $, bindAll, debounce } from "../dom.js";
+import { $, bindAll, unbindAll, debounce } from "../dom.js";
 import { $panel } from "../components/panel.js";
+import { bindClassMethods } from "../utils/classes.js";
 
-export const $canvas = (editor) => {
-  let afRid;
+export class Canvas extends EventTarget {
+  constructor(editor) {
+    super();
+    bindClassMethods(this);
+    this.onChange = debounce(this.onChange, 200).bind(this);
 
-  const $offset = $.input({ type: "number", min: 0, step: 1, value: 0 });
-  const $width = $.input({ type: "number", min: 2, step: 1, value: 100 });
-  const $body = $.div({ class: "canvas-body" }, [$("canvas")]);
+    this.editor = editor;
+    this.$offset = $.input({ type: "number", min: 0, step: 1, value: 0 });
+    this.$width = $.input({ type: "number", min: 2, step: 1, value: 100 });
+    this.$body = $.div({ class: "canvas-body" }, [$("canvas")]);
+    this.$canvas = this.$body.querySelector("canvas");
+    this.ctx = this.$canvas.getContext("2d");
+    this.resizeObserver = new ResizeObserver(this.onChange);
 
-  const canvas = $body.querySelector("canvas");
-  const ctx = canvas.getContext("2d");
+    const { $offset, $width, $body, onChange, onPixelClick, onSelect, resizeObserver } = this;
+    this.$element = $panel({ class: "canvas", label: "Canvas" }, {
+      body: [
+        $.div({ class: "filters" }, ["Offset:", $offset, "Width:", $width]),
+        $body
+      ],
+    }).$element;
 
-  function render() {
+    bindAll(editor.buffer, { change: onChange });
+    bindAll($offset, { change: onChange });
+    bindAll($width, { change: onChange });
+    bindAll($body, { click: onPixelClick });
+    bindAll(editor, { select: onSelect });
+    resizeObserver.observe($body);
+  }
+
+  destroy() {
+    const { editor, $offset, $width, $body, onChange, onPixelClick, onSelect, resizeObserver } = this;
+    unbindAll(editor.buffer, { change: onChange });
+    unbindAll($offset, { change: onChange });
+    unbindAll($width, { change: onChange });
+    unbindAll($body, { click: onPixelClick });
+    unbindAll(editor, { select: onSelect });
+    resizeObserver.unobserve(this.$body);
+  }
+
+  render() {
+    const { $width, $offset, $body, editor, $canvas, ctx } = this;
     const width = parseInt($width.value);
     let offset = parseInt($offset.value);
-    const unit = $body.clientWidth / width;
+    const unit = Math.min(20, $body.clientWidth / width);
 
-    canvas.setAttribute("width", unit * width);
-    canvas.setAttribute("height", Math.ceil((editor.buffer.length - offset) / width) * unit);
-    canvas.style.setProperty("max-width", `${20 * width}px`);
-    ctx.clearRect(0, 0, canvas.scrollWidth, canvas.scrollHeight);
+    $canvas.setAttribute("width", unit * width);
+    $canvas.setAttribute("height", Math.ceil((editor.buffer.length - offset) / width) * unit);
+    $canvas.style.setProperty("max-width", `${20 * width}px`);
+
+    ctx.clearRect(0, 0, $canvas.scrollWidth, $canvas.scrollHeight);
     let y = 0;
     while(offset < editor.buffer.length) {
       let line = Array.from(editor.buffer.subarray(offset, offset + width)).map(v => Math.round(v / 16).toString(16));
@@ -32,15 +65,16 @@ export const $canvas = (editor) => {
     }
   }
 
-  const onChange = debounce(() => {
-    cancelAnimationFrame(afRid);
-    afRid = requestAnimationFrame(render);
-  }, 100);
+  onChange() {
+    cancelAnimationFrame(this.afRid);
+    this.afRid = requestAnimationFrame(this.render);
+  };
 
-  function onPixelClick({ offsetX, offsetY, target }) {
+  onPixelClick({ offsetX, offsetY, target }) {
+    const { $width, $offset, $canvas, editor } = this;
     const width = parseInt($width.value);
     const offset = parseInt($offset.value);
-    const unit = canvas.scrollWidth / width;
+    const unit = $canvas.scrollWidth / width;
     const x = Math.floor(offsetX / unit);
     const y = Math.floor((offsetY + target.scrollTop) / unit);
 
@@ -50,29 +84,12 @@ export const $canvas = (editor) => {
     }
   }
 
-  function onSelect(e) {
+  onSelect(e) {
     const { startOffset } = e.detail;
+    const { $offset, $width, $canvas, $body } = this;
     const offset = parseInt($offset.value);
     const width = parseInt($width.value);
-    const unit = Math.floor(canvas.scrollWidth / width);
+    const unit = Math.floor($canvas.scrollWidth / width);
     $body.scrollTop = Math.floor((startOffset - offset) / width) * unit;
   }
-
-  bindAll(editor.buffer, { change: onChange });
-  bindAll($offset, { change: onChange });
-  bindAll($width, { change: onChange });
-  bindAll($body, { click: onPixelClick });
-
-  bindAll(editor, { select: onSelect });
-
-  const { $element } = $panel({ class: "canvas", label: "Canvas" }, {
-    body: [
-      $.div({ class: "filters" }, ["Offset:", $offset, "Width:", $width]),
-      $body
-    ],
-  });
-
-  return {
-    $element,
-  };
 }
