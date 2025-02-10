@@ -62,8 +62,8 @@ document.body.appendChild($.div({ id: "root" }, [
   menu,
   $split({}, [
     $split({}, [
-      editor,
       $split({}, [values, canvas]).setOrientation("vertical"),
+      editor,
     ]).setOrientation("horizontal"),
     strings,
   ]).setOrientation("vertical")
