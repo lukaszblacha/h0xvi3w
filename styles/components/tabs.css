@@ -55,6 +55,7 @@
       background: #FFAA0055;
       content: "";
       pointer-events: none;
+      user-select: none;
       transition: left 200ms, right 200ms, top 200ms, bottom 200ms;
     }
 

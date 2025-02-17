@@ -6,7 +6,7 @@ export const $ = (tag, attributes = {}, content = []) => {
     .forEach(child => {
       const $child = typeof child === "string"
         ? document.createTextNode(child)
-        : child.hasOwnProperty('$element') ? child.$element : child
+        : Object.hasOwnProperty.call(child,'$element') ? child.$element : child
       try {
         $el.appendChild($child)
       } catch(e) {

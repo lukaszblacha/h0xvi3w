@@ -14,6 +14,10 @@
   .panel-header, .panel-body {
     gap: 20px;
     justify-content: flex-start;
+
+    .hidden {
+      display: none;
+    }
   }
 
   .panel-header {

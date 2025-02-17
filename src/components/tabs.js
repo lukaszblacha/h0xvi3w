@@ -110,14 +110,15 @@ export class Tabs extends EventTarget {
 
   onDragOver(e) {
     const { $container } = this;
+    const { layerX, layerY } = e;
     if (e.target.parentNode !== e.currentTarget) {
       e.preventDefault();
     }
 
     const { width, height } = $container.getBoundingClientRect();
     const [px, py] = [
-      1 - (width - e.layerX) / width,
-      1 - (height - e.layerY) / height
+      1 - (width - layerX) / width,
+      1 - (height - layerY) / height
     ];
 
     let className = "drop-center";
