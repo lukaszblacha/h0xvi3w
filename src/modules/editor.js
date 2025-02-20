@@ -3,34 +3,21 @@ import { Panel } from "../components/panel.js";
 import { highlight, setCaret } from "../utils/text.js";
 import { DataBuffer } from "../structures/buffer.js";
 import { DataWindow } from "../components/window.js";
-import { bindClassMethods } from "../utils/classes.js";
 import { binToU8, charToU8, hexToU8, u8ToBin, u8ToChar, u8ToHex } from "../utils/converters.js";
+
+function parseViewsAttribute(str) {
+  return (str || "").split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+function updateModeLabel($node, insertMode) {
+  $node.innerText = insertMode ? "INS" : "OVR";
+}
 
 const displayValue = (num) =>
   `${num.toString(16).toUpperCase()}h (${num.toString()})`;
 
 const headerText = (lineWidth, charsPerByte = 1) =>
   Array(lineWidth).fill(0).map((_, i) => i.toString(16).padEnd(charsPerByte, " ")).join("").toUpperCase();
-
-const createEditorNode = (lineWidth = 16) => {
-  const { $element } = new Panel({ class: "editor", label: "Editor" }, {
-    header: [
-      $.div({ class: "col-index" }, "offset"),
-      $.div({ class: "col-bin hidden" }, headerText(lineWidth, 8)),
-      $.div({ class: "col-hex hidden" }, headerText(lineWidth, 2)),
-      $.div({ class: "col-ascii hidden" }, headerText(lineWidth, 1)),
-    ],
-    body: [
-      $.div({ class: "col-index" }),
-      $.div({ class: "col-bin hidden" }),
-      $.div({ class: "col-hex hidden" }),
-      $.div({ class: "col-ascii hidden" })
-    ],
-    footer: [$.div(), $.div(), $.div(), $.div()],
-  });
-
-  return $element;
-}
 
 function normalizeSelectionRange(baseOffset, extentOffset, charsPerByte = 1) {
   const start = Math.min(baseOffset, extentOffset);
@@ -58,61 +45,131 @@ function getViewSettings(name) {
 
 const createDataView = (name, buffer, lineWidth) => {
   const { charsPerByte, renderByte } = getViewSettings(name);
-  return new DataWindow({
-    class: `col-${name}`,
-    style: `width: ${lineWidth * charsPerByte}ch`,
-  }, { buffer, renderByte });
+  const w = new DataWindow({ buffer, renderByte });
+  w.classList.add(`col-${name}`);
+  w.style.width = `${lineWidth * charsPerByte}ch`;
+  return w;
 }
 
-export class HexEditor extends EventTarget {
+export class HexEditor extends Panel {
+  static observedAttributes = ["views", "mode"];
+
   constructor(lineWidth = 16) {
-    super();
-    bindClassMethods(this);
+    super({ label: "Editor" }, {
+      header: [
+        $("div", { class: "col-index" }, "offset"),
+        $("div", { class: "col-bin hidden" }, headerText(lineWidth, 8)),
+        $("div", { class: "col-hex hidden" }, headerText(lineWidth, 2)),
+        $("div", { class: "col-ascii hidden" }, headerText(lineWidth, 1)),
+      ],
+      body: [
+        $("div", { class: "col-index" }),
+        $("div", { class: "col-bin hidden" }),
+        $("div", { class: "col-hex hidden" }),
+        $("div", { class: "col-ascii hidden" })
+      ],
+      footer: [$("div"), $("div"), $("div"), $("div")],
+    });
+
+    this.onBeforeInput = this.onBeforeInput.bind(this);
+    this.onSelectionChange = this.onSelectionChange.bind(this);
+    this.switchMode = this.switchMode.bind(this);
 
     this.lineWidth = lineWidth;
-    this.insertMode = true;
     this.fileName = "data.bin";
     this.selectionStartOffset = 0;
     this.selectionEndOffset = 0;
     this.buffer = new DataBuffer();
-    this.$element = createEditorNode(this.lineWidth);
     this.views = { bin: { active: false }, hex: { active: false }, ascii: { active: false } };
+  }
 
-    const { $mode } = this.$dom;
-    bindAll($mode, { click: this.switchMode });
-    this.switchMode();
+  connectedCallback() {
+    super.connectedCallback();
+    let enabledViews = parseViewsAttribute(this.getAttribute("views"));
+    if(enabledViews.length < 1) {
+      this.setAttribute("views", "hex,ascii");
+      enabledViews = parseViewsAttribute(this.getAttribute("views"));
+    }
+
+    Object.keys(this.views).forEach((view) => {
+      if (enabledViews.includes(view)) this.enableView(view);
+      else this.disableView(view);
+    });
+
+    bindAll(this.$dom.$mode, { click: this.switchMode });
+    updateModeLabel(this.$dom.$mode, this.insertMode);
+  }
+
+  disconnectedCallback() {
+    unbindAll(this.$dom.$mode, { click: this.switchMode });
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (!this.isConnected) return;
+    switch (name) {
+      case "views": {
+        const enabledViews = parseViewsAttribute(newValue);
+        Object.keys(this.views).forEach((view) => {
+          if (enabledViews.includes(view)) this.enableView(view);
+          else this.disableView(view);
+        });
+        break;
+      }
+      case "mode": {
+        updateModeLabel(this.$dom.$mode, this.insertMode);
+        break;
+      }
+      default: return;
+    }
   }
 
   bindViewEventHandlers(view) {
-    bindAll(view.$element, { beforeinput: this.onBeforeInput });
-    bindAll(view, { selectionchange: this.onSelectionChange });
+    bindAll(view, {
+      beforeinput: this.onBeforeInput,
+      selectionchange: this.onSelectionChange
+    });
   }
 
   unbindViewEventHandlers(view) {
-    unbindAll(view.$element, { beforeinput: this.onBeforeInput });
-    unbindAll(view, { selectionchange: this.onSelectionChange });
+    unbindAll(view, {
+      beforeinput: this.onBeforeInput,
+      selectionchange: this.onSelectionChange
+    });
+  }
+
+  enableView(name) {
+    if (!(name in this.views) || this.views[name].active) return;
+    const cfg = this.views[name];
+
+    cfg.window = createDataView(name, this.buffer, this.lineWidth);
+    this.querySelector(`.panel-header .col-${name}`).classList.remove("hidden");
+    this.querySelector(`.panel-body .col-${name}`).replaceWith(cfg.window);
+    cfg.active = true;
+    this.bindViewEventHandlers(cfg.window);
+    cfg.window.render();
+    this.updateSelection(this.selectionStartOffset, this.selectionEndOffset);
+    highlight("selection", Object.values(this.views).map(({ window }) => window?.selectionRange).filter(Boolean));
+  }
+
+  disableView(name) {
+    if (!(name in this.views) || !this.views[name].active) return;
+    const cfg = this.views[name];
+
+    this.unbindViewEventHandlers(cfg.window);
+    this.querySelector(`.panel-header .col-${name}`).classList.add("hidden");
+    this.querySelector(`.panel-body .col-${name}`).replaceWith($("div", { class: `col-${name} hidden` }));
+    cfg.active = false;
+    delete cfg.window;
+    highlight("selection", Object.values(this.views).map(({ window }) => window?.selectionRange).filter(Boolean));
   }
 
   toggleView(name) {
-    if (!(name in this.views)) return;
-    const cfg = this.views[name];
-    if (cfg.active) {
-      this.unbindViewEventHandlers(cfg.window);
-      this.$element.querySelector(`.panel-header .col-${name}`).classList.add("hidden");
-      this.$element.querySelector(`.panel-body .col-${name}`).replaceWith($.div({ class: `col-${name} hidden` }));
-      cfg.window.destroy?.();
-      cfg.active = false;
-      delete cfg.window;
+    const views =parseViewsAttribute(this.getAttribute("views"));
+    if (views.includes(name)) {
+      this.setAttribute("views", views.filter((v) => v !== name).join(","));
     } else {
-      cfg.window = createDataView(name, this.buffer, this.lineWidth);
-      this.$element.querySelector(`.panel-header .col-${name}`).classList.remove("hidden");
-      this.$element.querySelector(`.panel-body .col-${name}`).replaceWith(cfg.window.$element);
-      cfg.active = true;
-      this.bindViewEventHandlers(cfg.window);
-      cfg.window.render();
-      this.updateSelection(this.selectionStartOffset, this.selectionEndOffset);
+      this.setAttribute("views", [...views, name].join(","));
     }
-    highlight("selection", Object.values(this.views).map(({ window }) => window?.selectionRange).filter(Boolean));
   }
 
   getBuffer() {
@@ -120,9 +177,8 @@ export class HexEditor extends EventTarget {
   }
 
   get $dom() {
-    const { $element } = this;
-    const [$pos, $val, $size, $mode] = $element.querySelectorAll(".panel-footer > *");
-    const $body = $element.querySelector(".panel-body");
+    const [$pos, $val, $size, $mode] = this.querySelectorAll(".panel-footer > *");
+    const $body = this.querySelector(".panel-body");
     const $index = $body.firstChild;
 
     return { $pos, $val, $size, $mode, $index, $body };
@@ -183,6 +239,7 @@ export class HexEditor extends EventTarget {
 
     if (text.length % charsPerByte !== 0) {
       if (insertMode) {
+        // TODO: always overwrites the rest of currently edited byte
         text = text.concat(new Array(charsPerByte - text.length % charsPerByte).fill('0').join(""));
       } else {
         const lastByteOffset = Math.floor(offset / charsPerByte) + Math.floor(text.length / charsPerByte);
@@ -199,7 +256,7 @@ export class HexEditor extends EventTarget {
     const { baseOffset, extentOffset, baseNode: $node, extentNode } = document.getSelection();
     if ($node !== extentNode) return;
 
-    const activeWindow = Object.values(this.views).find(({active, window}) => active && window.$textNode === $node);
+    const activeWindow = Object.values(this.views).find(({active, window}) => active && window.$textNode === $node).window;
     let [startOffset, endOffset] = normalizeSelectionRange(baseOffset, extentOffset, activeWindow.charsPerByte);
 
     switch (e.inputType) {
@@ -263,10 +320,12 @@ export class HexEditor extends EventTarget {
     this.updateSelection(start, end);
   }
 
+  get insertMode() {
+    return this.getAttribute("mode") === "insert";
+  }
+
   switchMode() {
-    const { $mode } = this.$dom;
-    this.insertMode = !this.insertMode;
-    $mode.innerText = this.insertMode ? "INS" : "OVR";
+    this.setAttribute("mode", this.insertMode ? "overwrite" : "insert");
   }
 
   setBuffer(buf) {
@@ -298,3 +357,4 @@ export class HexEditor extends EventTarget {
     this.setBuffer(buf);
   }
 }
+customElements.define("hv-editor", HexEditor);

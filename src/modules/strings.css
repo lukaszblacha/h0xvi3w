@@ -1,33 +1,33 @@
-.strings {
+hv-strings {
   min-height: 20vh;
   min-width: 15vw;
+
+  .panel-header {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px;
+    background-color: var(--color-input-container-bg);
+
+    input[type="search"] {
+      flex-grow: 1;
+    }
+    input[type="number"] {
+      width: 40px;
+      padding-left: 1px;
+      padding-right: 0;
+    }
+    input[type="checkbox"] {
+      margin: 0;
+      width: 26px;
+      height: 26px;
+    }
+  }
 
   .panel-body {
     display: flex;
     flex-direction: column;
     padding: 0;
     gap: 8px;
-
-    .filters {
-      display: flex;
-      flex: 0 0 auto;
-      gap: 4px;
-      background-color: var(--color-input-container-bg);
-
-      input[type="search"] {
-        flex-grow: 1;
-      }
-      input[type="number"] {
-        width: 40px;
-        padding-left: 1px;
-        padding-right: 0;
-      }
-      input[type="checkbox"] {
-        margin: 0;
-        width: 26px;
-        height: 26px;
-      }
-    }
 
     .list {
       display: block;

@@ -4,9 +4,7 @@ export const $ = (tag, attributes = {}, content = []) => {
   (Array.isArray(content) ? content : [content])
     .filter(Boolean)
     .forEach(child => {
-      const $child = typeof child === "string"
-        ? document.createTextNode(child)
-        : Object.hasOwnProperty.call(child,'$element') ? child.$element : child
+      const $child = typeof child === "string" ? document.createTextNode(child) : child;
       try {
         $el.appendChild($child)
       } catch(e) {
@@ -15,9 +13,6 @@ export const $ = (tag, attributes = {}, content = []) => {
     });
   return $el;
 }
-
-["div", "ul", "li", "span", "button", "input", "table", "tr", "th", "td", "a"]
-  .forEach((tagName) => $[tagName] = $.bind(null, tagName));
 
 export const cn = (...args) => args.filter(Boolean).join(" ");
 

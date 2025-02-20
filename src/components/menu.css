@@ -1,10 +1,11 @@
-.main-menu {
+hv-menu {
   --color-menu-item-active-bg: #303132;
 
   display: flex;
   align-items: flex-start;
   gap: 4px;
   padding: 2px 8px;
+  list-style: none;
 
   .item, .submenu {
     border: solid 1px transparent;
@@ -19,16 +20,16 @@
     left: -1px;
     min-width: 100px;
     overflow: hidden;
+
+    hr {
+      display: block;
+      margin: 0.5ch 1ch;
+      border: 0;
+      height: 1px;
+      background: #FFF4;
+    }
   }
 
-  input[type=file] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-  }
-}
-
-.menu {
   .item {
     background-color: var(--color-input-container-bg);
     padding: .5ch 1ch;
@@ -41,10 +42,16 @@
       z-index: 1;
     }
   }
+
+  input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
 }
 
 /* Fancy stuff */
-.main-menu {
+hv-menu {
   background-color: var(--color-input-container-bg);
 
   .submenu, .item {

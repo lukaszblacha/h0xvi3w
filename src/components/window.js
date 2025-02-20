@@ -1,33 +1,51 @@
-import { $, bindAll, cn } from "../dom.js";
-import { bindClassMethods } from "../utils/classes.js";
+import {bindAll, unbindAll} from "../dom.js";
 import { range } from "../utils/text.js";
 
-export class DataWindow extends EventTarget {
-  constructor(attributes = {}, { buffer, renderByte } = {}) {
+export class DataWindow extends HTMLElement {
+  constructor({ buffer, renderByte } = {}) {
     super();
-    bindClassMethods(this);
+    this.initialized = false;
+
+    this.onBufferChange = this.onBufferChange.bind(this);
+    this.onSelectionChange = this.onSelectionChange.bind(this);
+
     this.buffer = buffer;
     this.renderByte = renderByte;
     this.charsPerByte = renderByte(0).length;
+    this.skipSelectionHandler = false;
 
     this.$textNode = document.createTextNode(" ");
-    this.$element = $.div({
-      ...attributes,
-      spellcheck: false,
-      contenteditable: "plaintext-only",
-      autocomplete: "off",
-      class: cn("window", attributes.class)
-    }, [this.$textNode]);
-
+    this.appendChild(this.$textNode);
     this.selectionRange = range(this.$textNode, 0, 0);
-    this.skipSelectionHandler = false;
+  }
+
+  connectedCallback() {
+    if (!this.initialized) {
+      this.initialized = true;
+
+      this.classList.add("window");
+      this.setAttribute("spellcheck", false);
+      this.setAttribute("contenteditable", "plaintext-only");
+      this.setAttribute("autocomplete", "off");
+    }
+
     document.addEventListener("selectionchange", this.onSelectionChange);
 
-    bindAll(buffer, {
+    bindAll(this.buffer, {
       overwrite: this.onBufferChange,
       insert: this.onBufferChange,
       delete: this.onBufferChange,
-    })
+    });
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener("selectionchange", this.onSelectionChange);
+
+    unbindAll(this.buffer, {
+      overwrite: this.onBufferChange,
+      insert: this.onBufferChange,
+      delete: this.onBufferChange,
+    });
   }
 
   onBufferChange({ detail, type }) {
@@ -65,13 +83,6 @@ export class DataWindow extends EventTarget {
     this.skipSelectionHandler = false;
   }
 
-  /**
-   * @param {number} offset
-   */
-  set scrollTop(offset) {
-    this.$element.scrollTop = `${offset}px`;
-  }
-
   onSelectionChange() {
     if(this.skipSelectionHandler) return;
     let { focusNode, baseOffset, extentOffset } = document.getSelection();
@@ -91,8 +102,10 @@ export class DataWindow extends EventTarget {
    * @param {number} end
    */
   setSelection(start, end) {
+    if (end > this.$textNode.data.length) return;
     const { selectionRange, $textNode } = this;
     selectionRange.setStart($textNode, Math.min(start, end));
     selectionRange.setEnd($textNode, Math.max(start, end));
   }
 }
+customElements.define("hv-window", DataWindow);

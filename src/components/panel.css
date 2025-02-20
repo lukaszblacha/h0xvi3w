@@ -9,11 +9,14 @@
   .panel-header, .panel-body, .panel-footer {
     display: flex;
     padding: .2ch 1ch;
+
+    &:empty { display: none; }
   }
 
   .panel-header, .panel-footer {
     color: var(--color-mild-text);
     flex: 0 0 auto;
+    align-items: center;
   }
 
   .panel-body {
@@ -27,5 +30,6 @@
 
   .panel-footer {
     border-top: solid 1px;
+    gap: 4px;
   }
 }

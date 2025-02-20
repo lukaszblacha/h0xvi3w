@@ -1,13 +1,11 @@
 import { $, bindAll } from "./dom.js";
 import { HexEditor } from "./modules/editor.js";
-import { ValuesExplorer } from "./modules/values-explorer.js";
-import { Strings } from "./modules/strings.js";
-import { Canvas } from "./modules/canvas.js";
 import { MainMenu } from "./components/menu.js";
-import { Tabs } from "./components/tabs.js";
 import { DataBufferView } from "./structures/buffer-view.js";
+import { Layout } from "./layout.js";
 
 const editor = new HexEditor(16);
+const layout = new Layout(editor);
 
 function createFile() {
   const buffer = new DataBufferView(new Uint8Array(Array(16).fill(0)));
@@ -30,7 +28,7 @@ function saveFile() {
   if (!window.confirm(`Download file "${editor.fileName}"?`)) return;
   const blob = new Blob([editor.getBuffer()], { type: "application/octet-stream" });
   const url = window.URL.createObjectURL(blob);
-  const link = $.a({ href: url, download: editor.fileName });
+  const link = $("a", { href: url, download: editor.fileName });
   document.body.appendChild(link);
   link.style = 'display: none';
   link.click();
@@ -38,56 +36,37 @@ function saveFile() {
   setTimeout(() => window.URL.revokeObjectURL(url), 1000);
 }
 
-const $file = $.input({ type: "file" });
+const $file = $("input", { type: "file" });
 bindAll($file, { change: openFile });
 
-const windows = {
-  "strings": { active: false, createWindow: (e) => new Strings(e) },
-  "canvas": { active: false, createWindow: (e) => new Canvas(e) },
-  "values-explorer": { active: false, createWindow: (e) => new ValuesExplorer(e) },
-};
+const menu = new MainMenu();
 
-function toggleWindow(name) {
-  if (!windows[name]) return;
-  const cfg = windows[name];
-  if (cfg.active) {
-    cfg.window.destroy?.();
-    cfg.window.$element.parentNode?.removeChild(this.$element);
-    cfg.active = false;
-    delete cfg.window;
-  } else {
-    cfg.window = cfg.createWindow(editor);
-    document.querySelector(".tabs-container").appendChild(cfg.window.$element);
-    cfg.active = true;
-  }
-}
+document.body.appendChild($("div", { id: "root" }, [menu, layout]));
 
-const menu = new MainMenu({
+menu.setItems({
   items: [
-    { label: "?", action: () => alert('notimpl') },
     { label: "File", items: [
-      { label: 'New', action: createFile },
-      { label: 'Open', $element: $file },
-      { label: 'Save', action: saveFile },
-    ]},
-    { label: "Edit", action: () => alert('notimpl') },
+        { label: 'New', action: createFile },
+        { label: 'Open', $element: $file },
+        { label: 'Save', action: saveFile },
+      ]},
+    // { label: "Edit", action: () => alert('notimpl') },
     { label: "View", items: [
         { label: 'Binary', action: () => editor.toggleView("bin") },
         { label: 'Hexadecimal', action: () => editor.toggleView("hex") },
         { label: 'ASCII', action: () => editor.toggleView("ascii") },
       ] },
     { label: "Window", items: [
-        { label: 'Values explorer', action: () => toggleWindow("values-explorer") },
-        { label: 'Strings', action: () => toggleWindow("strings") },
-        { label: 'Canvas', action: () => toggleWindow("canvas") },
+        { label: 'Values explorer', action: () => layout.toggleWindow("values-explorer") },
+        { label: 'Strings', action: () => layout.toggleWindow("strings") },
+        { label: 'Canvas', action: () => layout.toggleWindow("canvas") },
+        { type: "spacer" },
+        { label: 'Save layout', action: () => layout.save() },
       ] },
   ]
 });
 
-document.body.appendChild($.div({ id: "root" }, [
-  menu,
-  new Tabs({}, [editor]),
-]));
+layout.restore();
 
 addEventListener("beforeunload", (event) => {
   event.preventDefault();

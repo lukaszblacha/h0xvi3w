@@ -1,20 +1,20 @@
-import { $, cn } from "../dom.js";
+import { $ } from "../dom.js";
 
-export class Panel extends EventTarget {
+export class Panel extends HTMLElement {
   constructor(attributes = {}, { header, body, footer } = {}) {
     super();
-
-    this.$element = $.div(
-        { ...attributes, class: cn("panel", attributes.class) },
-        [
-          header && $.div({ class: "panel-header" }, header),
-          body && $.div({ class: "panel-body" }, body),
-          footer && $.div({ class: "panel-footer" }, footer),
-        ]
-    );
+    this.initialized = false;
+    Object.entries(attributes).forEach(([name, value]) => this.setAttribute(name, value));
+    if (header) this.appendChild($("div", { class: "panel-header" }, header));
+    if (body) this.appendChild($("div", { class: "panel-body" }, body));
+    if (footer) this.appendChild($("div", { class: "panel-footer" }, footer));
   }
 
-  destroy() {
-    this.$element.parentNode?.removeChild(this.$element);
+  connectedCallback() {
+    if (!this.initialized) {
+      this.initialized = true;
+      this.classList.add("panel");
+    }
   }
 }
+customElements.define("hv-panel", Panel);

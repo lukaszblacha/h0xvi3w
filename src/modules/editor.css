@@ -1,12 +1,9 @@
-.split:has(.editor) {
+hv-split:has(hv-editor), hv-tabs:has(hv-editor) {
   flex-grow: 1;
+  flex-shrink: 0;
 }
 
-.tabs:has(.editor) {
-  flex-grow: 1;
-}
-
-.editor {
+hv-editor {
   max-width: 85vw;
   min-height: 50vh;
   flex: 1 0 100% !important;

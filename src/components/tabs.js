@@ -1,56 +1,68 @@
-import { $, bindAll, cn, unbindAll } from "../dom.js";
+import { $, bindAll, unbindAll } from "../dom.js";
 import { Split } from "./split.js";
-import { bindClassMethods } from "../utils/classes.js";
 
-export class Tabs extends EventTarget {
-  constructor(attributes = {}, content) {
+export class Tabs extends HTMLElement {
+  static observedAttributes = ["tabs-position"];
+
+  constructor(content) {
     super();
-    bindClassMethods(this);
-
-    this.$element = $.div({ ...attributes, class: cn("tabs", attributes.class) }, [
-      $.ul({ class: "tabs-list" }),
-      $.div({ class: "tabs-container" }, content),
-    ]);
-
-    [this.$list, this.$container] = this.$element.querySelectorAll("& > *");
+    this.initialContent = content;
     this.activeTabIndex = 0;
+    this.initialized = false;
 
-    this.observer = new MutationObserver(this.onDomChange);
-    const { $list, $container, onListItemClick, onDragOver, onDragLeave, onDrop, onDomChange, observer } = this;
-    bindAll($list, { click: onListItemClick });
-    bindAll($container, {
-      dragover: onDragOver,
-      dragleave: onDragLeave,
-      drop: onDrop
-    });
-    observer.observe($container, { childList: true });
-    onDomChange();
+    this.onListItemClick = this.onListItemClick.bind(this);
+    this.onDragOver = this.onDragOver.bind(this);
+    this.onDragLeave = this.onDragLeave.bind(this);
+    this.onDrop = this.onDrop.bind(this);
+    this.onChildListChange = this.onChildListChange.bind(this);
+    this.onTabDragStart = this.onTabDragStart.bind(this);
+    this.setActiveTabIndex = this.setActiveTabIndex.bind(this);
   }
 
-  destroy() {
-    const { observer, $element, $list, $container, onListItemClick, onDragOver, onDragLeave, onDrop } = this;
-    observer.disconnect();
-    unbindAll($list, { click: onListItemClick });
-    unbindAll($container, {
-      dragover: onDragOver,
-      dragleave: onDragLeave,
-      drop: onDrop
+  connectedCallback() {
+    if (!this.initialized) {
+      this.initialized = true;
+      this.classList.add("tabs");
+      this.$list = $("ul", { class: "tabs-list" });
+      this.$container = $("div", { class: "tabs-container" }, this.initialContent);
+      delete this.initialContent;
+      this.appendChild(this.$list);
+      this.appendChild(this.$container);
+    }
+
+    bindAll(this.$list, { click: this.onListItemClick });
+    bindAll(this.$container, {
+      dragover: this.onDragOver,
+      dragleave: this.onDragLeave,
+      drop: this.onDrop
     });
-    $element.parentNode?.removeChild($element);
+    this.observer = new MutationObserver(this.onChildListChange);
+    this.observer.observe(this.$container, { childList: true });
+    this.onChildListChange();
+  }
+
+  disconnectedCallback() {
+    this.observer.disconnect();
+    this.observer = null;
+    unbindAll(this.$list, { click: this.onListItemClick });
+    unbindAll(this.$container, {
+      dragover: this.onDragOver,
+      dragleave: this.onDragLeave,
+      drop: this.onDrop
+    });
   }
 
   setActiveTabIndex(index) {
-    const { $list, $container } = this;
     if (index >= 0) {
       this.activeTabIndex = index;
-      Array.from($list.children).map(($el, i) => {
+      Array.from(this.$list.children).map(($el, i) => {
         if(i === index) {
           $el.classList.add("active");
         } else {
           $el.classList.remove("active");
         }
       });
-      Array.from($container.children).map(($el, i) => {
+      Array.from(this.$container.children).map(($el, i) => {
         if(i === index) {
           $el.classList.add("active-tab");
         } else {
@@ -62,60 +74,55 @@ export class Tabs extends EventTarget {
 
   onTabDragStart(e) {
     const index = parseInt(e.target.dataset.index);
-    const { $container } = this;
     e.dataTransfer.dropEffect = "move";
     e.dataTransfer.effectAllowed = "move";
     Array.from(document.querySelectorAll("[dnd-source]")).forEach(n => n.removeAttribute("dnd-source"));
-    $container.children[index].setAttribute("dnd-source", true);
+    this.$container.children[index].setAttribute("dnd-source", true);
   }
 
-  onDomChange() {
-    const { activeTabIndex, $element, $list, $container, onTabDragStart, setActiveTabIndex, destroy } = this;
-    const $parent = $element.parentNode;
-    const $children = Array.from($container.children);
-    if ($parent && $children.length === 0) {
-      destroy();
+  onChildListChange() {
+    const $children = Array.from(this.$container.children);
+    if (this.isConnected && $children.length === 0) {
+      this.parentNode.removeChild(this);
       return;
+    }
+
+    for (let $c of $children) {
+      if ($c.classList.contains("tabs")) {
+        $c.replaceWith($c.querySelector(".tabs-container > *"));
+        return; // Flatten the dom structure
+      }
     }
 
     const labels = $children.map(($el, i) => $el.getAttribute("label") || `Tab ${i}`);
 
-    Array.from($list.children).forEach(c => {
-      unbindAll(c, { dragstart: onTabDragStart });
-      c.parentNode.removeChild(c);
+    Array.from(this.$list.children).forEach($el => {
+      $el.removeEventListener("dragstart", this.onTabDragStart);
+      this.$list.removeChild($el);
     });
 
     labels.map((label, index) => {
-      const $el = $.li({ draggable: true, "data-index": index, class: index === activeTabIndex ? "active" : undefined }, label);
-      bindAll($el, { dragstart: onTabDragStart });
-      $list.appendChild($el);
+      const $el = $("li", { draggable: true, "data-index": index, class: index === this.activeTabIndex ? "active" : undefined }, label);
+      $el.addEventListener("dragstart", this.onTabDragStart);
+      this.$list.appendChild($el);
     });
 
-    setActiveTabIndex(activeTabIndex >= $children.length ? $children.length - 1 : activeTabIndex);
+    this.setActiveTabIndex(this.activeTabIndex >= $children.length ? $children.length - 1 : this.activeTabIndex);
   }
 
   onListItemClick({ target }) {
-    const { setActiveTabIndex } = this;
     if (target.tagName.toLowerCase() === "li") {
-      setActiveTabIndex(Array.from(target.parentNode.children).indexOf(target));
+      this.setActiveTabIndex(Array.from(target.parentNode.children).indexOf(target));
     }
   }
 
-  setTabsPosition(p) {
-    const { $element } = this;
-    if(p === "bottom") $element.setAttribute("bottom", true);
-    $element.removeAttribute("bottom");
-    return this;
-  }
-
   onDragOver(e) {
-    const { $container } = this;
     const { layerX, layerY } = e;
     if (e.target.parentNode !== e.currentTarget) {
       e.preventDefault();
     }
 
-    const { width, height } = $container.getBoundingClientRect();
+    const { width, height } = this.$container.getBoundingClientRect();
     const [px, py] = [
       1 - (width - layerX) / width,
       1 - (height - layerY) / height
@@ -132,36 +139,34 @@ export class Tabs extends EventTarget {
       className = "drop-bottom";
     }
 
-    if(!$container.classList.contains(className)) {
-      $container.classList.add(className);
-      const classes = Array.from($container.classList).filter(c => c.startsWith("drop-") && c !== className);
-      if (classes.length) $container.classList.remove(classes);
+    if(!this.$container.classList.contains(className)) {
+      this.$container.classList.add(className);
+      const classes = Array.from(this.$container.classList).filter(c => c.startsWith("drop-") && c !== className);
+      if (classes.length) this.$container.classList.remove(classes);
     }
   }
 
   onDragLeave() {
-    const { $container } = this;
-    $container.classList.remove("drop-top", "drop-left", "drop-right", "drop-bottom", "drop-center");
+    this.$container.classList.remove("drop-top", "drop-left", "drop-right", "drop-bottom", "drop-center");
   }
 
   onDrop() {
-    const { $element, $container, setActiveTabIndex } = this;
     const $source = document.querySelector("[dnd-source]");
-    const $parent = $element.parentNode;
+    const className = Array.from(this.$container.classList).filter(c => c.startsWith("drop-"))[0];
+    this.$container.classList.remove(className);
 
-    const className = Array.from($container.classList).filter(c => c.startsWith("drop-"))[0];
     if (className === "drop-center") {
-      $container.appendChild($source);
-      setActiveTabIndex($container.children.length - 1);
+      this.$container.appendChild($source);
+      this.setActiveTabIndex(this.$container.children.length - 1);
     } else {
-      const $placeholder = $parent.insertBefore($.div(), $element);
+      const split = new Split();
+      this.parentNode.insertBefore(split, this);
       const splitContent = (["drop-top", "drop-left"].includes(className))
-        ? [new Tabs({}, $source), $element]
-        : [$element, new Tabs({}, $source)];
-      const splitOrientation = ["drop-left", "drop-right"].includes(className) ? "horizontal" : "vertical";
-      const split = new Split({}, splitContent).setOrientation(splitOrientation);
-      $placeholder.replaceWith(split.$element);
+        ? [new Tabs($source), this]
+        : [this, new Tabs($source)];
+      splitContent.forEach(el => split.appendChild(el));
+      split.setAttribute("orientation", ["drop-left", "drop-right"].includes(className) ? "horizontal" : "vertical");
     }
-    $container.classList.remove("drop-top", "drop-left", "drop-right", "drop-bottom", "drop-center");
   }
 }
+customElements.define("hv-tabs", Tabs);

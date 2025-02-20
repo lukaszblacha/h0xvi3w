@@ -1,0 +1,33 @@
+hv-split[orientation="vertical"]:has(hv-canvas) hv-tabs:has(hv-canvas) {
+  flex-grow: 1;
+}
+
+hv-canvas {
+  min-height: 20vh;
+  min-width: 15vw;
+  max-width: 240px;
+
+  .panel-body {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 8px;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .panel-footer {
+    background-color: var(--color-input-container-bg);
+
+    input[type="number"] {
+      width: 50px;
+      line-height: 1em;
+      padding: 0 0 0 1px;
+    }
+  }
+
+  .canvas-body {
+    width: 100%;
+    overflow: auto;
+  }
+}
