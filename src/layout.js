@@ -6,7 +6,67 @@ import { Canvas } from "./modules/canvas.js";
 import { HexEditor } from "./modules/editor.js";
 import { $ } from "./dom.js";
 
-const defaultLayout = { type: "hv-split", orientation: "vertical", items: [{ type: "hv-tabs", items: [{ type: "hv-editor" }] }] };
+const defaultLayout = {
+  "type": "hv-split",
+  "orientation": "vertical",
+  "items": [
+    {
+      "type": "hv-split",
+      "orientation": "horizontal",
+      "items": [
+        {
+          "type": "hv-tabs",
+          "tabs-position": "top",
+          "items": [
+            {
+              "type": "hv-editor",
+              "views": "hex,ascii",
+              "mode": "overwrite"
+            }
+          ]
+        },
+        {
+          "type": "hv-split",
+          "orientation": "vertical",
+          "items": [
+            {
+              "type": "hv-tabs",
+              "tabs-position": "top",
+              "items": [
+                {
+                  "type": "hv-values-explorer",
+                  "big-endian": "false"
+                }
+              ]
+            },
+            {
+              "type": "hv-tabs",
+              "tabs-position": "top",
+              "items": [
+                {
+                  "type": "hv-canvas",
+                  "width": "30",
+                  "offset": "0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "hv-tabs",
+      "tabs-position": "bottom",
+      "items": [
+        {
+          "type": "hv-strings",
+          "min-length": "6",
+          "case-sensitive": "false"
+        }
+      ]
+    }
+  ]
+};
 
 const componentMap = {
   "hv-tabs": Tabs,
@@ -26,6 +86,7 @@ const windows = {
 export class Layout extends HTMLElement {
   constructor(editor) {
     super();
+    this.initialized = false;
 
     this.getLayoutElement = this.getLayoutElement.bind(this);
 
@@ -34,9 +95,12 @@ export class Layout extends HTMLElement {
   }
 
   connectedCallback() {
-    this.classList.add("layout");
-    this.appendChild($("div"));
-    this.set(defaultLayout);
+    if (!this.initialized) {
+      this.initialized = true;
+      this.classList.add("layout");
+      this.appendChild($("div"));
+      this.set(defaultLayout);
+    }
   }
 
   createLayoutElement(cfg, parent) {
@@ -107,7 +171,7 @@ export class Layout extends HTMLElement {
     return [...el.children].map(this.getLayoutElement)[0];
   }
 
-  set(layout) {
+  set(layout = defaultLayout) {
     // is this still necessary?
     this.windows.forEach(w => w.parentNode.removeChild(w));
     this.windows = [];
