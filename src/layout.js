@@ -101,13 +101,13 @@ export class Layout extends HTMLElement {
     switch (cfg.type) {
       case "hv-split": {
         component = new Split();
-        component.setAttribute("orientation", cfg.orientation ?? "horizontal");
+        component.setAttribute("orientation", cfg.orientation);
         cfg.items?.map((item) => this.createLayoutElement(item)).forEach(el => component.appendChild(el));
         break;
       }
       case "hv-tabs": {
         component = new Tabs(cfg.items?.map((item) => this.createLayoutElement(item)));
-        component.setAttribute("tabs-position", cfg["tabs-position"] ?? "top");
+        component.setAttribute("tabs-position", cfg["tabs-position"]);
         break;
       }
       case "hv-editor": {
@@ -118,19 +118,19 @@ export class Layout extends HTMLElement {
       }
       case "hv-strings": {
         component = new Strings(this.editor);
-        component.setAttribute("min-length", cfg["min-length"] ?? 6);
-        component.setAttribute("case-sensitive", cfg["case-sensitive"] ?? false);
+        component.setAttribute("min-length", cfg["min-length"]);
+        component.setAttribute("case-sensitive", cfg["case-sensitive"]);
         break;
       }
       case "hv-values-explorer": {
         component = new ValuesExplorer(this.editor);
-        component.setAttribute("big-endian", cfg["big-endian"] ?? true);
+        component.setAttribute("big-endian", cfg["big-endian"]);
         break;
       }
       case "hv-canvas": {
         component = new Canvas(this.editor);
-        component.setAttribute("width", cfg.width ?? 50);
-        component.setAttribute("offset", cfg.offset ?? 0);
+        component.setAttribute("width", cfg.width);
+        component.setAttribute("offset", cfg.offset);
         break;
       }
       default: {
