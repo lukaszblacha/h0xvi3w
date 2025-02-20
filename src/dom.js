@@ -18,7 +18,7 @@ export const cn = (...args) => args.filter(Boolean).join(" ");
 
 export const bindAll = ($node, events = {}) => {
   Object.entries(events).forEach(([name, handlers = []]) => {
-    if (typeof handlers === 'function') handlers = [handlers];
+    if (typeof handlers === "function") handlers = [handlers];
     handlers.forEach(handler => {
       $node.addEventListener(name, handler);
     })
@@ -27,7 +27,7 @@ export const bindAll = ($node, events = {}) => {
 
 export const unbindAll = ($node, events = {}) => {
   Object.entries(events).forEach(([name, handlers = []]) => {
-    if (typeof handlers === 'function') handlers = [handlers];
+    if (typeof handlers === "function") handlers = [handlers];
     handlers.forEach(handler => {
       $node.removeEventListener(name, handler);
     })

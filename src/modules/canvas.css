@@ -3,9 +3,8 @@ hv-split[orientation="vertical"]:has(hv-canvas) hv-tabs:has(hv-canvas) {
 }
 
 hv-canvas {
-  min-height: 20vh;
-  min-width: 15vw;
-  max-width: 240px;
+  min-height: 50px;
+  min-width: 50px;
 
   .panel-body {
     display: flex;

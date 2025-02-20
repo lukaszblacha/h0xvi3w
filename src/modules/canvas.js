@@ -1,6 +1,11 @@
 import { $, bindAll, unbindAll, debounce } from "../dom.js";
 import { Panel } from "../components/panel.js";
 
+const defaults = {
+  "width": "50",
+  "offset": "0",
+};
+
 export class Canvas extends Panel {
   static observedAttributes = ["width", "offset"];
 
@@ -29,8 +34,8 @@ export class Canvas extends Panel {
     this.ctx = this.$canvas.getContext("2d");
 
     const [offsetInput, widthInput] = this.querySelectorAll("input");
-    offsetInput.value = this.getAttribute("offset");
-    widthInput.value = this.getAttribute("width");
+    offsetInput.value = this.offset;
+    widthInput.value = this.width;
 
     this.resizeObserver = new ResizeObserver(this.onChange);
     bindAll(this.editor.buffer, { change: this.onChange });
@@ -56,10 +61,12 @@ export class Canvas extends Panel {
     const [offsetInput, widthInput] = this.querySelectorAll("input");
     switch (name) {
       case "width": {
+        if (!newValue) return this.setAttribute(name, defaults[name]);
         widthInput.value = newValue;
         break;
       }
       case "offset": {
+        if (!newValue) return this.setAttribute(name, defaults[name]);
         offsetInput.value = newValue;
         break;
       }
@@ -68,16 +75,23 @@ export class Canvas extends Panel {
     this.render();
   }
 
+  get width() {
+    return parseInt(this.getAttribute("width") ?? defaults["width"]);
+  }
+
+  get offset() {
+    return parseInt(this.getAttribute("offset") ?? defaults["offset"]);
+  }
+
   handleInputChange(e) {
     this.setAttribute(e.target.name, e.target.value);
   }
 
   render() {
-    const { editor, $canvas, ctx } = this;
+    const { editor, $canvas, ctx, width } = this;
     const $body = this.querySelector(".canvas-body");
-    const width = parseInt(this.getAttribute("width"));
-    let offset = parseInt(this.getAttribute("offset"));
     const unit = Math.min(20, $body.clientWidth / width);
+    let offset = this.offset;
 
     $canvas.setAttribute("width", unit * width);
     $canvas.setAttribute("height", Math.ceil((editor.buffer.length - offset) / width) * unit);
@@ -102,9 +116,7 @@ export class Canvas extends Panel {
   };
 
   onPixelClick({ offsetX, offsetY, target }) {
-    const { $canvas, editor } = this;
-    const width = parseInt(this.getAttribute("width"));
-    const offset = parseInt(this.getAttribute("offset"));
+    const { $canvas, editor, width, offset } = this;
     const unit = $canvas.scrollWidth / width;
     const x = Math.floor(offsetX / unit);
     const y = Math.floor((offsetY + target.scrollTop) / unit);

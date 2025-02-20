@@ -23,6 +23,10 @@ export class Split extends HTMLElement {
     this.observer = null;
   }
 
+  get orientation() {
+    return this.getAttribute("orientation") === "vertical" ? "vertical" : "horizontal";
+  }
+
   onChildNodesChange() {
     switch (this.children.length) {
       case 0:
@@ -36,7 +40,7 @@ export class Split extends HTMLElement {
       }
     }
     Array.from(this.children).forEach((item) => {
-      if(item.tagName.toLowerCase() === "hv-split" && item.getAttribute("orientation") === this.getAttribute("orientation")) {
+      if(item.tagName.toLowerCase() === "hv-split" && item.orientation === this.orientation) {
         Array.from(item.children).forEach((child) => {
           try {
             item.insertAdjacentElement("beforebegin", child);

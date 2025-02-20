@@ -1,6 +1,10 @@
 import { $, bindAll, unbindAll, debounce } from "../dom.js";
 import { Panel } from "../components/panel.js";
 
+const defaults = {
+  "big-endian": "true"
+}
+
 function formatBinValue(value) {
   return value[0]?.toString(2).padStart(8, "0") ?? "◌";
 }
@@ -40,8 +44,11 @@ export class ValuesExplorer extends Panel {
   constructor(editor) {
     super(
       { label: "Values explorer" },
-      { body: [], footer: [] }
+      { body: [], footer: [$("div")] }
     );
+
+    this.$body = this.querySelector(".panel-body");
+    this.$bigEndian = this.querySelector(".panel-footer > div");
 
     this.setValue = this.setValue.bind(this);
     this.switchEndianness = this.switchEndianness.bind(this);
@@ -55,27 +62,23 @@ export class ValuesExplorer extends Panel {
   connectedCallback() {
     super.connectedCallback();
 
-    this.$body = this.querySelector(".panel-body");
-    this.$bigEndian = $("div");
-    this.querySelector(".panel-footer").appendChild(this.$bigEndian);
-    updateEndiannessLabel(this.$bigEndian, this.getAttribute("big-endian") === "true");
-
     bindAll(this.editor, { select: this.setValue });
     bindAll(this.$bigEndian, { click: this.switchEndianness });
+
+    updateEndiannessLabel(this.$bigEndian, this.bigEndian);
     this.render();
   }
 
   disconnectedCallback() {
     unbindAll(this.editor, { select: this.setValue });
     unbindAll(this.$bigEndian, { click: this.switchEndianness });
-    this.$body = null;
-    this.$bigEndian.parentNode.removeChild(this.$bigEndian);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (!this.isConnected) return;
     switch (name) {
       case "big-endian": {
+        if (!newValue) return this.setAttribute(name, defaults[name]);
         updateEndiannessLabel(this.$bigEndian, newValue === "true");
         this.render();
         break;
@@ -84,9 +87,12 @@ export class ValuesExplorer extends Panel {
     }
   }
 
+  get bigEndian() {
+    return (this.getAttribute("big-endian") ?? defaults["big-endian"]) === "true";
+  }
+
   render() {
-    const { value } = this;
-    const bigEndian = this.getAttribute("big-endian") === "true";
+    const { value, bigEndian } = this;
     const table = $("table", {}, [
       ["bin", formatBinValue(value)],
       ["chr", formatChar(value)],
@@ -111,10 +117,7 @@ export class ValuesExplorer extends Panel {
   }
 
   switchEndianness() {
-    this.setAttribute(
-      "big-endian",
-      !(this.getAttribute("big-endian") === "true")
-    );
+    this.setAttribute("big-endian", String(!this.bigEndian));
   }
 
   setValue(e) {

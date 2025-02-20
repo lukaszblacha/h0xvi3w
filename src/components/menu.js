@@ -12,7 +12,7 @@ const toMenuItems = (items) => {
 
     if (item.action instanceof Function) {
       // fixme: remove the listener when destroying the dom node
-      $el.addEventListener('click', item.action);
+      $el.addEventListener("click", item.action);
     }
 
     return $el;

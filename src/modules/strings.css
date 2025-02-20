@@ -41,6 +41,10 @@ hv-strings {
       white-space: nowrap;
       overflow: auto visible;
 
+      span {
+        color: #fff8;
+      }
+
       &:hover {
         background-color: rgb(136, 89, 0);
       }

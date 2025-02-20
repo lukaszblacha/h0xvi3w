@@ -1,6 +1,11 @@
 import { $, bindAll, unbindAll, debounce } from "../dom.js";
 import { Panel } from "../components/panel.js";
 
+const defaults = {
+  "min-length": "6",
+  "case-sensitive": "false"
+}
+
 export class Strings extends Panel {
   static observedAttributes = ["min-length", "case-sensitive"];
 
@@ -21,17 +26,17 @@ export class Strings extends Panel {
 
     this.strArray = [];
     this.editor = editor;
+
+    this.$body = this.querySelector(".list");
+    this.$search = this.querySelector("input[type=search]");
   }
 
   connectedCallback() {
     super.connectedCallback();
 
-    this.$body = this.querySelector(".list");
-    this.$search = this.querySelector("input[type=search]");
-
     const [, minLengthInput, caseSensitiveInput] = this.querySelectorAll("input");
-    minLengthInput.value = this.getAttribute("min-length");
-    caseSensitiveInput.checked = this.getAttribute("case-sensitive") === "true";
+    minLengthInput.value = this.minLength;
+    caseSensitiveInput.checked = this.caseSensitive;
 
     bindAll(this.$body, { click: this.onStringClick });
     bindAll(this.$search, { change: this.onSearchTermChange });
@@ -53,14 +58,15 @@ export class Strings extends Panel {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (!this.isConnected) return;
-    const [, minLengthInput, caseSensitiveInput] = this.querySelectorAll("input");
     switch (name) {
       case "min-length": {
-        minLengthInput.value = newValue;
+        if (!newValue) return this.setAttribute(name, defaults[name]);
+        this.querySelector(`input[name="${name}"]`).value = newValue;
         break;
       }
       case "case-sensitive": {
-        caseSensitiveInput.checked = newValue ;
+        if (!newValue) return this.setAttribute(name, defaults[name]);
+        this.querySelector(`input[name="${name}"]`).checked = newValue === "true";
         break;
       }
       default: return;
@@ -68,17 +74,34 @@ export class Strings extends Panel {
     this.render(this.$search.value);
   }
 
+  get minLength() {
+    return Number(this.getAttribute("min-length") ?? defaults["min-length"]);
+  }
+
+  get caseSensitive() {
+    return (this.getAttribute("case-sensitive") ?? defaults["case-sensitive"]) === "true";
+  }
+
   handleInputChange(e) {
     const { name, checked, type, value } = e.target;
-    this.setAttribute(name, type.toLowerCase() === "checkbox" ? checked : value);
+    this.setAttribute(name, type.toLowerCase() === "checkbox" ? String(checked) : value);
   }
 
   render(filter = "") {
     this.$body.innerText = "";
+    const fc = this.caseSensitive
+      ? (str) => str.includes(filter)
+      : (str) => str.toLowerCase().includes(filter.toLowerCase());
     this.strArray.forEach(([str, offset]) => {
-      const fc = this.getAttribute("case-sensitive") === "true" ? str.includes(filter) : str.toLowerCase().includes(filter.toLowerCase());
-      if ((!filter || fc) && str.length >= Number(this.getAttribute("min-length") ?? 3)) {
-        this.$body.appendChild($("div", { class: "string", 'data-start': offset, 'data-end': offset + str.length }, [`[0x${offset.toString(16).padStart(5, "0").toUpperCase()}] ${str} `]));
+      if (str.length >= this.minLength && (!filter || fc(str))) {
+        this.$body.appendChild($(
+          "div",
+          { class: "string", "data-start": offset, "data-end": offset + str.length },
+          [
+            $("span", {}, `${offset.toString(16).padStart(5, "0").toUpperCase()}h: `),
+            str
+          ]
+        ));
       }
     });
   }

@@ -30,7 +30,7 @@ function saveFile() {
   const url = window.URL.createObjectURL(blob);
   const link = $("a", { href: url, download: editor.fileName });
   document.body.appendChild(link);
-  link.style = 'display: none';
+  link.style = "display: none";
   link.click();
   link.remove();
   setTimeout(() => window.URL.revokeObjectURL(url), 1000);
@@ -46,22 +46,22 @@ document.body.appendChild($("div", { id: "root" }, [menu, layout]));
 menu.setItems({
   items: [
     { label: "File", items: [
-        { label: 'New', action: createFile },
-        { label: 'Open', $element: $file },
-        { label: 'Save', action: saveFile },
+        { label: "New", action: createFile },
+        { label: "Open", $element: $file },
+        { label: "Save", action: saveFile },
       ]},
-    // { label: "Edit", action: () => alert('notimpl') },
+    // { label: "Edit", action: () => alert("notimpl") },
     { label: "View", items: [
-        { label: 'Binary', action: () => editor.toggleView("bin") },
-        { label: 'Hexadecimal', action: () => editor.toggleView("hex") },
-        { label: 'ASCII', action: () => editor.toggleView("ascii") },
+        { label: "Binary", action: () => editor.toggleView("bin") },
+        { label: "Hexadecimal", action: () => editor.toggleView("hex") },
+        { label: "ASCII", action: () => editor.toggleView("ascii") },
       ] },
     { label: "Window", items: [
-        { label: 'Values explorer', action: () => layout.toggleWindow("values-explorer") },
-        { label: 'Strings', action: () => layout.toggleWindow("strings") },
-        { label: 'Canvas', action: () => layout.toggleWindow("canvas") },
+        { label: "Values explorer", action: () => layout.toggleWindow("hv-values-explorer") },
+        { label: "Strings", action: () => layout.toggleWindow("hv-strings") },
+        { label: "Canvas", action: () => layout.toggleWindow("hv-canvas") },
         { type: "spacer" },
-        { label: 'Save layout', action: () => layout.save() },
+        { label: "Save layout", action: () => layout.save() },
       ] },
   ]
 });

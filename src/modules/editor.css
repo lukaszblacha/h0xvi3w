@@ -4,8 +4,6 @@ hv-split:has(hv-editor), hv-tabs:has(hv-editor) {
 }
 
 hv-editor {
-  max-width: 85vw;
-  min-height: 50vh;
   flex: 1 0 100% !important;
 
   .panel-header, .panel-body {

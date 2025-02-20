@@ -77,12 +77,6 @@ const componentMap = {
   "hv-canvas": Canvas
 };
 
-const windows = {
-  "strings": { create: (e) => new Strings(e) },
-  "canvas": { create: (e) => new Canvas(e) },
-  "values-explorer": { create: (e) => new ValuesExplorer(e) },
-};
-
 export class Layout extends HTMLElement {
   constructor(editor) {
     super();
@@ -91,7 +85,6 @@ export class Layout extends HTMLElement {
     this.getLayoutElement = this.getLayoutElement.bind(this);
 
     this.editor = editor;
-    this.windows = [];
   }
 
   connectedCallback() {
@@ -125,19 +118,19 @@ export class Layout extends HTMLElement {
       }
       case "hv-strings": {
         component = new Strings(this.editor);
-        this.windows.push(component);
+        component.setAttribute("min-length", cfg["min-length"] ?? 6);
+        component.setAttribute("case-sensitive", cfg["case-sensitive"] ?? false);
         break;
       }
       case "hv-values-explorer": {
         component = new ValuesExplorer(this.editor);
-        this.windows.push(component);
+        component.setAttribute("big-endian", cfg["big-endian"] ?? true);
         break;
       }
       case "hv-canvas": {
         component = new Canvas(this.editor);
         component.setAttribute("width", cfg.width ?? 50);
         component.setAttribute("offset", cfg.offset ?? 0);
-        this.windows.push(component);
         break;
       }
       default: {
@@ -172,12 +165,7 @@ export class Layout extends HTMLElement {
   }
 
   set(layout = defaultLayout) {
-    // is this still necessary?
-    this.windows.forEach(w => w.parentNode.removeChild(w));
-    this.windows = [];
-    const root = this.createLayoutElement(layout);
-
-    this.firstChild.replaceWith(root);
+    this.firstChild.replaceWith(this.createLayoutElement(layout));
   }
 
   get() {
@@ -197,14 +185,12 @@ export class Layout extends HTMLElement {
   }
 
   toggleWindow(name) {
-    if (!windows[name]) return;
-    const cfg = windows[name];
-    if (cfg.window) {
-      cfg.window.parentNode.removeChild(cfg.window);
-      delete cfg.window;
+    if (!(name in componentMap)) return;
+    const $node = document.querySelector(name);
+    if ($node) {
+      $node.parentNode.removeChild($node);
     } else {
-      cfg.window = cfg.create(this.editor);
-      document.querySelector(".tabs-container").appendChild(cfg.window);
+      document.querySelector(".tabs-container").appendChild(new componentMap[name](this.editor));
     }
   }
 }

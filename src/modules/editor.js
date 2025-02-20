@@ -9,8 +9,8 @@ function parseViewsAttribute(str) {
   return (str || "").split(",").map((s) => s.trim()).filter(Boolean);
 }
 
-function updateModeLabel($node, insertMode) {
-  $node.innerText = insertMode ? "INS" : "OVR";
+function updateModeLabel($node, mode) {
+  $node.innerText = mode === "insert" ? "INS" : "OVR";
 }
 
 const displayValue = (num) =>
@@ -51,6 +51,11 @@ const createDataView = (name, buffer, lineWidth) => {
   return w;
 }
 
+const defaults = {
+  mode: "overwrite",
+  views: "hex,ascii",
+};
+
 export class HexEditor extends Panel {
   static observedAttributes = ["views", "mode"];
 
@@ -85,19 +90,17 @@ export class HexEditor extends Panel {
 
   connectedCallback() {
     super.connectedCallback();
-    let enabledViews = parseViewsAttribute(this.getAttribute("views"));
-    if(enabledViews.length < 1) {
+    if(this.activeViews.length < 1) {
       this.setAttribute("views", "hex,ascii");
-      enabledViews = parseViewsAttribute(this.getAttribute("views"));
     }
 
     Object.keys(this.views).forEach((view) => {
-      if (enabledViews.includes(view)) this.enableView(view);
+      if (this.activeViews.includes(view)) this.enableView(view);
       else this.disableView(view);
     });
 
     bindAll(this.$dom.$mode, { click: this.switchMode });
-    updateModeLabel(this.$dom.$mode, this.insertMode);
+    updateModeLabel(this.$dom.$mode, this.mode);
   }
 
   disconnectedCallback() {
@@ -116,11 +119,19 @@ export class HexEditor extends Panel {
         break;
       }
       case "mode": {
-        updateModeLabel(this.$dom.$mode, this.insertMode);
+        updateModeLabel(this.$dom.$mode, this.mode);
         break;
       }
       default: return;
     }
+  }
+
+  get mode() {
+    return this.getAttribute("mode") ?? defaults["mode"];
+  }
+
+  get activeViews() {
+    return parseViewsAttribute(this.getAttribute("views") ?? defaults["views"]);
   }
 
   bindViewEventHandlers(view) {
@@ -164,11 +175,11 @@ export class HexEditor extends Panel {
   }
 
   toggleView(name) {
-    const views =parseViewsAttribute(this.getAttribute("views"));
-    if (views.includes(name)) {
-      this.setAttribute("views", views.filter((v) => v !== name).join(","));
+    const { activeViews } = this;
+    if (activeViews.includes(name)) {
+      this.setAttribute("views", activeViews.filter((v) => v !== name).join(","));
     } else {
-      this.setAttribute("views", [...views, name].join(","));
+      this.setAttribute("views", [...activeViews, name].join(","));
     }
   }
 
@@ -212,7 +223,7 @@ export class HexEditor extends Panel {
   }
 
   normalizeInput(text, inputType, offset) {
-    const { buffer, insertMode } = this;
+    const { buffer, mode } = this;
     const activeWindow = this.views[inputType].window;
     const { charsPerByte } = activeWindow;
     let caret = offset;
@@ -238,7 +249,7 @@ export class HexEditor extends Panel {
     }
 
     if (text.length % charsPerByte !== 0) {
-      if (insertMode) {
+      if (mode === "insert") {
         // TODO: always overwrites the rest of currently edited byte
         text = text.concat(new Array(charsPerByte - text.length % charsPerByte).fill('0').join(""));
       } else {
@@ -267,7 +278,7 @@ export class HexEditor extends Panel {
         const [chunk, caretOffset] = this.normalizeInput(data, activeWindow === this.views.hex.window ? "hex" : activeWindow === this.views.bin.window ? "bin" : "ascii", Math.min(baseOffset, extentOffset));
         if (!chunk) return;
 
-        if (this.insertMode) {
+        if (this.mode === "insert") {
           this.buffer.insert(chunk, startOffset, endOffset);
         } else {
           if (startOffset + chunk.length > this.buffer.length) return;
@@ -293,7 +304,7 @@ export class HexEditor extends Panel {
 
         let caretOffset = startOffset;
         const bytesToDelete = endOffset - startOffset;
-        if (this.insertMode) {
+        if (this.mode === "insert") {
           this.buffer.delete(startOffset, bytesToDelete);
         } else {
           const chunk = new Uint8Array(Array(Math.max(bytesToDelete, 1)).fill(0));
@@ -320,12 +331,8 @@ export class HexEditor extends Panel {
     this.updateSelection(start, end);
   }
 
-  get insertMode() {
-    return this.getAttribute("mode") === "insert";
-  }
-
   switchMode() {
-    this.setAttribute("mode", this.insertMode ? "overwrite" : "insert");
+    this.setAttribute("mode", this.mode === "insert" ? "overwrite" : "insert");
   }
 
   setBuffer(buf) {
