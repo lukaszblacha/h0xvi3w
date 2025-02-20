@@ -31,7 +31,7 @@ hv-tabs {
         }
 
         ul.tabs-list > li {
-            border-radius: 0 0 6px 6px;
+            border-radius: 0 0 2px 2px;
         }
     }
 
@@ -45,8 +45,8 @@ hv-tabs {
         white-space: nowrap;
 
         & > li {
-            border: solid 1px var(--color-mild-text);
-            border-radius: 6px 6px 0 0;
+            background-color: #FFF2;
+            border-radius: 2px 2px 0 0;
             border-bottom-width: 0;
             padding: 1px 5px;
 
