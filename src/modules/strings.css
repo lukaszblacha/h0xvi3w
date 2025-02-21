@@ -3,9 +3,6 @@ hv-strings {
   min-width: 15vw;
 
   .panel-header {
-    display: flex;
-    flex: 0 0 auto;
-    gap: 4px;
     background-color: var(--color-input-container-bg);
 
     input[type="search"] {

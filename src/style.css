@@ -43,7 +43,8 @@ input, button {
   display: block;
   position: relative;
   appearance: none;
-  width: 100%;
+  min-width: 0;
+  width: unset;
   margin: 0;
   padding: .2ch 1ch;
   border: solid 1px transparent;
@@ -57,6 +58,11 @@ input, button {
   &:focus {
     outline: none;
   }
+}
+
+button {
+  width: unset;
+  flex-shrink: 0;
 }
 
 input[type="checkbox"][label] {

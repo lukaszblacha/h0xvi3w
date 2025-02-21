@@ -13,10 +13,12 @@
     &:empty { display: none; }
   }
 
-  .panel-header, .panel-footer {
+  .panel-header, .panel-footer, .panel-toolbar {
     color: var(--color-mild-text);
+    display: flex;
     flex: 0 0 auto;
     align-items: center;
+    gap: 4px;
   }
 
   .panel-body {
@@ -30,6 +32,13 @@
 
   .panel-footer {
     border-top: solid 1px;
-    gap: 4px;
+  }
+
+  .panel-toolbar {
+    color: inherit;
+    display: flex;
+    background-color: var(--color-input-container-bg);
+    align-self: flex-start;
+    padding: .2ch 1ch;
   }
 }
