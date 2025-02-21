@@ -1,11 +1,8 @@
 hv-split:has(hv-editor), hv-tabs:has(hv-editor) {
-  flex-grow: 1;
-  flex-shrink: 0;
+  flex: 1 1 50%;
 }
 
-hv-editor {
-  flex: 1 0 100% !important;
-
+hv-editor.panel {
   .panel-header, .panel-body {
     gap: 20px;
     justify-content: flex-start;

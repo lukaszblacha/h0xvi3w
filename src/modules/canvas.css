@@ -2,10 +2,7 @@ hv-split[orientation="vertical"]:has(hv-canvas) hv-tabs:has(hv-canvas) {
   flex-grow: 1;
 }
 
-hv-canvas {
-  min-height: 50px;
-  min-width: 50px;
-
+hv-canvas.panel {
   .panel-body {
     display: flex;
     flex-direction: column;

@@ -7,7 +7,7 @@
 
 hv-split {
     display: flex;
-    flex: 0 1 auto;
+    flex: 0 1 25%;
     flex-direction: row;
     gap: 4px;
     overflow: hidden;
@@ -24,6 +24,7 @@ hv-tabs {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    flex: 1 0 25%;
 
     &[tabs-position="bottom"] {
         & > *:nth-child(1) {
@@ -43,6 +44,7 @@ hv-tabs {
         font-size: small;
         overflow-x: auto;
         white-space: nowrap;
+        flex: 0 0 auto;
 
         & > li {
             background-color: #FFF2;
@@ -62,8 +64,9 @@ hv-tabs {
         overflow: hidden;
         position: relative;
 
-        & > * {
-            flex: 1 1 auto;
+        & > .active-tab {
+            min-width: 100%;
+            min-height: 100%;
         }
 
         & > *:not(.active-tab) {
