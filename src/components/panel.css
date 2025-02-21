@@ -39,6 +39,7 @@
     display: flex;
     background-color: var(--color-input-container-bg);
     align-self: flex-start;
+    width: 100%;
     padding: .2ch 1ch;
   }
 }

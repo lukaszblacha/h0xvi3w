@@ -100,7 +100,7 @@ export class Canvas extends Panel {
     ctx.clearRect(0, 0, $canvas.scrollWidth, $canvas.scrollHeight);
     let y = 0;
     while(offset < editor.buffer.length) {
-      let line = Array.from(editor.buffer.subarray(offset, offset + width)).map(v => Math.round(v / 16).toString(16));
+      let line = Array.from(editor.buffer.subarray(offset, offset + width)).map(v => Math.round(v / 16).toString(16).padStart(2, "0"));
       line.forEach((s, i) => {
         ctx.fillStyle = `#${s}${s}${s}`;
         ctx.fillRect(i * unit, y, unit, unit);

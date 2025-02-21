@@ -17,8 +17,8 @@ export function readInt(uint8arr, bits, signed, bigEndian) {
   for (let i in buf) {
     val = val * 256n + BigInt(buf[i]);
   }
-  if (signed && val >= BigInt((2 ** bits) >> 1)) {
-    val = BigInt(-(2 ** bits)) + val;
+  if (signed && val >= (2n ** BigInt(bits)) >> 1n) {
+    val = -(2n ** BigInt(bits)) + val;
   }
   return val;
 }
