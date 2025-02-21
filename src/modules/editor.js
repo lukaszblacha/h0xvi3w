@@ -1,6 +1,6 @@
 import { $, bindAll, unbindAll } from "../dom.js";
 import { Panel } from "../components/panel.js";
-import { highlight, setCaret } from "../utils/text.js";
+import {highlight, range, setCaret} from "../utils/text.js";
 import { DataBuffer } from "../structures/buffer.js";
 import { DataWindow } from "../components/window.js";
 import { binToU8, charToU8, hexToU8, u8ToBin, u8ToChar, u8ToHex } from "../utils/converters.js";
@@ -357,6 +357,18 @@ export class HexEditor extends Panel {
     const { $body } = this.$dom;
     $body.scrollTop = Math.floor(start / this.lineWidth) * 20;
     this.updateSelection(start, end);
+  }
+
+  setHighlights(arr = []) {
+    const groups = Array
+      .from(new Set(arr.map(({ name }) => name)))
+      .reduce((obj, name) => ({ ...obj, [name]: [] }), {});
+    arr.forEach(({ name, start, end }) => {
+      groups[name].push(range(this.views.ascii.window.$textNode, start, end));
+    });
+    Object.entries(groups).forEach(([name, ranges]) => {
+      highlight(name, ranges);
+    })
   }
 
   openFile(buf, name) {

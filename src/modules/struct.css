@@ -1,0 +1,6 @@
+hv-struct.panel {
+  .panel-body {
+    padding: 0;
+    flex-direction: column;
+  }
+}

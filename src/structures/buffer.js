@@ -224,6 +224,8 @@ export class DataBuffer extends EventTarget {
     return writeInt(this, offset, 64, true, true, value);
   }
   writeString(start, value) {
+    // TODO: test
     return this.set(start, value.split("").map(c => c.charCodeAt(0)));
   }
+  // TODO: float, double
 }
