@@ -60,6 +60,7 @@ menu.setItems({
         { label: "Values explorer", action: () => layout.toggleWindow("hv-values-explorer") },
         { label: "Strings", action: () => layout.toggleWindow("hv-strings") },
         { label: "Canvas", action: () => layout.toggleWindow("hv-canvas") },
+        { label: "Structures", action: () => layout.toggleWindow("hv-struct") },
         { type: "spacer" },
         { label: "Save layout", action: () => layout.save() },
       ] },

@@ -3,6 +3,7 @@ import { Tabs } from "./components/tabs.js";
 import { Strings } from "./modules/strings.js";
 import { ValuesExplorer } from "./modules/values-explorer.js";
 import { Canvas } from "./modules/canvas.js";
+import { Struct } from "./modules/struct.js";
 import { HexEditor } from "./modules/editor.js";
 import { $ } from "./dom.js";
 
@@ -74,7 +75,8 @@ const componentMap = {
   "hv-editor": HexEditor,
   "hv-values-explorer": ValuesExplorer,
   "hv-strings": Strings,
-  "hv-canvas": Canvas
+  "hv-canvas": Canvas,
+  "hv-struct": Struct
 };
 
 export class Layout extends HTMLElement {
@@ -131,6 +133,10 @@ export class Layout extends HTMLElement {
         component = new Canvas(this.editor);
         component.setAttribute("width", cfg.width);
         component.setAttribute("offset", cfg.offset);
+        break;
+      }
+      case "hv-struct": {
+        component = new Struct(this.editor);
         break;
       }
       default: {
