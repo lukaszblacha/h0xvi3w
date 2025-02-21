@@ -1,14 +1,14 @@
 import { $, bindAll } from "./dom.js";
 import { HexEditor } from "./modules/editor.js";
 import { MainMenu } from "./components/menu.js";
-import { DataBufferView } from "./structures/buffer-view.js";
+import { DataBuffer } from "./structures/buffer.js";
 import { Layout } from "./layout.js";
 
 const editor = new HexEditor(16);
 const layout = new Layout(editor);
 
 function createFile() {
-  const buffer = new DataBufferView(new Uint8Array(Array(16).fill(0)));
+  const buffer = new DataBuffer(new Uint8Array(Array(16).fill(0)));
   editor.openFile(buffer);
 }
 
@@ -18,7 +18,7 @@ function openFile(e) {
 
   const fileReader = new FileReader();
   fileReader.onload = ({ target }) => {
-    const buffer = new DataBufferView(new Uint8Array(target.result));
+    const buffer = new DataBuffer(new Uint8Array(target.result));
     editor.openFile(buffer, file.name);
   }
   fileReader.readAsArrayBuffer(file);

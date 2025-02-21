@@ -91,3 +91,23 @@ input[type="checkbox"][label]:checked:after {
   background-color: #202122;
   box-shadow: 0 -1px 2px #0008 inset;
 }
+
+
+
+table {
+  width: 100%;
+}
+
+td:first-child {
+  text-align: right;
+  border-right: solid 1px #fffa;
+  width: 4ch;
+}
+
+tr:nth-child(2n) {
+  background-color: #fff1;
+}
+
+td {
+  padding: 0 4px;
+}

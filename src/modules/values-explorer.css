@@ -5,22 +5,4 @@ hv-values-explorer {
   .panel-body {
     align-items: flex-start;
   }
-
-  table {
-    width: 100%;
-  }
-
-  td:first-child {
-    text-align: right;
-    border-right: solid 1px #fffa;
-    width: 4ch;
-  }
-
-  tr:nth-child(2n) {
-    background-color: #fff1;
-  }
-
-  td {
-    padding: 0 4px;
-  }
 }

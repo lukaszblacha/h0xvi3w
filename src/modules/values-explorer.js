@@ -1,5 +1,6 @@
 import { $, bindAll, unbindAll, debounce } from "../dom.js";
 import { Panel } from "../components/panel.js";
+import { readInt } from "../structures/buffer.js";
 
 const defaults = {
   "big-endian": "true"
@@ -14,21 +15,11 @@ function updateEndiannessLabel($node, bigEndian) {
 }
 
 function formatInt(value, bits, signed, bigEndian) {
-  let numChars = Math.round(bits / 8);
-  if (value.length < numChars) {
+  try {
+    return readInt(value, bits, signed, bigEndian);
+  } catch {
     return "◌";
   }
-  const buf = value.slice(0, numChars);
-  if (!bigEndian) buf.reverse();
-
-  let val = 0n;
-  for (let i in buf) {
-    val = val * 256n + BigInt(buf[i]);
-  }
-  if (signed && val >= BigInt((2 ** bits) >> 1)) {
-    val = BigInt(-(2 ** bits)) + val;
-  }
-  return val;
 }
 
 function formatChar(value) {
