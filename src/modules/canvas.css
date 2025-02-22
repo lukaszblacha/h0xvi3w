@@ -12,6 +12,18 @@ hv-canvas.panel {
     overflow: hidden;
   }
 
+  .canvas-body {
+    width: 100%;
+    overflow: hidden auto;
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  canvas {
+    transform-origin: 0 0;
+  }
+
   .panel-footer {
     background-color: var(--color-input-container-bg);
 
@@ -20,10 +32,5 @@ hv-canvas.panel {
       line-height: 1em;
       padding: 0 0 0 1px;
     }
-  }
-
-  .canvas-body {
-    width: 100%;
-    overflow: auto;
   }
 }

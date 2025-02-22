@@ -31,7 +31,7 @@ export class Canvas extends Panel {
   connectedCallback() {
     super.connectedCallback();
     this.$canvas = this.querySelector("canvas");
-    this.ctx = this.$canvas.getContext("2d");
+    this.ctx = this.$canvas.getContext("2d", { alpha: false });
 
     const [offsetInput, widthInput] = this.querySelectorAll("input");
     offsetInput.value = this.offset;
@@ -90,17 +90,17 @@ export class Canvas extends Panel {
   render() {
     const { editor, $canvas, ctx, width } = this;
     const $body = this.querySelector(".canvas-body");
-    const unit = Math.min(20, $body.clientWidth / width);
+    const unit = Math.min(20, Math.max(1, Math.floor($body.clientWidth / width)));
     let offset = this.offset;
 
-    $canvas.setAttribute("width", unit * width);
+    $canvas.setAttribute("width", width * unit);
     $canvas.setAttribute("height", Math.ceil((editor.buffer.length - offset) / width) * unit);
-    $canvas.style.setProperty("max-width", `${20 * width}px`);
+    $canvas.style.setProperty("transform", `scale(${$body.clientWidth / (width * unit)})`);
 
     ctx.clearRect(0, 0, $canvas.scrollWidth, $canvas.scrollHeight);
     let y = 0;
     while(offset < editor.buffer.length) {
-      let line = Array.from(editor.buffer.subarray(offset, offset + width)).map(v => Math.round(v / 16).toString(16).padStart(2, "0"));
+      let line = Array.from(editor.buffer.subarray(offset, offset + width)).map(v => v.toString(16).padStart(2, "0"));
       line.forEach((s, i) => {
         ctx.fillStyle = `#${s}${s}${s}`;
         ctx.fillRect(i * unit, y, unit, unit);
