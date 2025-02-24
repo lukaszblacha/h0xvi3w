@@ -15,8 +15,6 @@ hv-canvas.panel {
   .canvas-body {
     width: 100%;
     overflow: hidden auto;
-    display: flex;
-    align-items: center;
     height: 100%;
   }
 
