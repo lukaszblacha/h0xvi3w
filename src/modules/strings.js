@@ -88,7 +88,7 @@ export class Strings extends Panel {
   }
 
   render(filter = "") {
-    Array.from(this.$body.children).forEach((item) => item.parentNode.removeChild(item));
+    Array.from(this.$body.children).forEach((item) => item.remove());
     const fc = this.caseSensitive
       ? (str) => str.includes(filter)
       : (str) => str.toLowerCase().includes(filter.toLowerCase());

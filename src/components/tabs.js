@@ -83,7 +83,7 @@ export class Tabs extends HTMLElement {
   onChildListChange() {
     const $children = Array.from(this.$container.children);
     if (this.isConnected && $children.length === 0) {
-      this.parentNode.removeChild(this);
+      this.remove();
       return;
     }
 

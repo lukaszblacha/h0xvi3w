@@ -192,7 +192,7 @@ export class Layout extends HTMLElement {
     if (!(name in componentMap)) return;
     const $node = document.querySelector(name);
     if ($node) {
-      $node.parentNode.removeChild($node);
+      $node.remove();
     } else {
       document.querySelector(".tabs-container").appendChild(new componentMap[name](this.editor));
     }

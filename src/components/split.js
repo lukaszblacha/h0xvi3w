@@ -30,12 +30,12 @@ export class Split extends HTMLElement {
   onChildNodesChange() {
     switch (this.children.length) {
       case 0:
-        this.parentNode.removeChild(this);
+        this.remove();
         return;
       case 1: {
         const $child = this.children[0];
         this.parentNode.insertBefore($child, this);
-        this.parentNode.removeChild(this);
+        this.remove();
         return;
       }
     }

@@ -105,7 +105,7 @@ export class StructTemplate extends Panel {
   }
 
   close() {
-    this.parentNode.removeChild(this);
+    this.remove();
   }
 
   remove() {

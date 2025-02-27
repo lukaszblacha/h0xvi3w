@@ -42,6 +42,7 @@ bindAll($file, { change: openFile });
 const menu = new MainMenu();
 
 document.body.appendChild($("div", { id: "root" }, [menu, layout]));
+document.body.appendChild($("div", { id: "popover" }));
 
 menu.setItems({
   items: [
