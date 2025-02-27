@@ -1,7 +1,6 @@
 hv-struct-template.panel {
-    display: block;
-    margin: 1em;
     box-shadow: 0 0 10px #000;
+    min-height: 30vh;
 
     .format {
       width: -webkit-fill-available;

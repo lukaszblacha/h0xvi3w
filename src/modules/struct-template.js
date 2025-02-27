@@ -4,9 +4,13 @@ import { Panel } from "../components/panel.js";
 
 export class StructTemplate extends Panel {
   constructor(storage, name = "struct") {
-    super({ class: "dialog" }, {
-      header: "Edit structure",
+    super({}, {
+      header: ["Edit structure"],
       body: $("div", {}, [
+        $("div", { class: "info" }, [
+          "Simplified implementation of python's struct. ",
+          $("a", { href: "https://docs.python.org/3/library/struct.html#format-characters", rel: "noopener, noreferrer", target: "_blank" }, ["learn more"]),
+        ]),
         $("div", { class: "panel-toolbar" }, [
           "name: ",
           $("input", { class: "name", name: "name", value: name }),
@@ -14,12 +18,13 @@ export class StructTemplate extends Panel {
           $("input", { class: "format", name: "format", value: ">" }),
         ]),
         $("table", { class: "spec" }),
-        $("div", { class: "panel-toolbar" }, [
-          $("button", { name: "save", title: "Save" }, "💾"),
-          $("button", { name: "remove", title: "Remove" }, "🗑"),
-          $("button", { name: "cancel", title: "Cancel" }, "✕")
-        ])
-      ])
+      ]),
+      footer: [
+        $("div", { class: "spacer" }),
+        $("button", { name: "save", title: "Save" }, "💾 Save"),
+        $("button", { name: "remove", title: "Remove" }, "🗑 Remove"),
+        $("button", { name: "cancel", title: "Cancel" }, "✕ Cancel")
+      ]
     });
 
     this.onFormatChange = this.onFormatChange.bind(this);

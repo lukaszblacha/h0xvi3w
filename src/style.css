@@ -60,6 +60,10 @@ input, button, select {
   &:focus {
     outline: none;
   }
+
+  &:hover {
+    background: #242526;
+  }
 }
 
 button, select {
@@ -107,7 +111,23 @@ input[type="checkbox"][label]:checked:after {
   box-shadow: 0 -1px 2px #0008 inset;
 }
 
+a {
+  display: inline-block;
+  padding: 0 .5lh;
+  border-radius: 1lh;
+  background: #FFF2;
+  color: inherit;
+  text-decoration: none;
 
+  &:hover {
+    background: #FFF3;
+  }
+
+  &:before {
+    content: "🔗";
+    padding-right: 0.5ch;
+  }
+}
 
 table {
   width: 100%;
@@ -127,9 +147,30 @@ tr:nth-child(2n) {
   background-color: #fff1;
 }
 
-td {
-  padding: 0 4px;
+td, th {
   text-align: center;
+  padding: 0 4px;
+
+  &.right {
+    text-align: right;
+  }
+
+  &.left {
+    text-align: left;
+  }
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.info {
+  font-size: 10px;
+  display: block;
+  border-radius: 4px;
+  background-color: #FFF1;
+  padding: 1ch;
+  margin: 1ch;
 }
 
 td, th {

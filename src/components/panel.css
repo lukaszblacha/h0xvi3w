@@ -14,7 +14,6 @@
   }
 
   .panel-header, .panel-footer, .panel-toolbar {
-    color: var(--color-mild-text);
     display: flex;
     flex: 0 0 auto;
     align-items: center;
@@ -26,8 +25,16 @@
     flex: 1 1 0; /* must be zero for scroll behaviour */
   }
 
+  .panel-header, .panel-footer {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
   .panel-header {
     border-bottom: solid 1px var(--color-mild-text);
+    overflow: auto hidden;
   }
 
   .panel-footer {
