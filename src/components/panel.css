@@ -27,11 +27,11 @@
   }
 
   .panel-header {
-    border-bottom: solid 1px;
+    border-bottom: solid 1px var(--color-mild-text);
   }
 
   .panel-footer {
-    border-top: solid 1px;
+    border-top: solid 1px var(--color-mild-text);
   }
 
   .panel-toolbar {

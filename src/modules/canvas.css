@@ -22,13 +22,13 @@ hv-canvas.panel {
     transform-origin: 0 0;
   }
 
-  .panel-footer {
+  .panel-header {
     background-color: var(--color-input-container-bg);
+    color: inherit;
 
     input[type="number"] {
       width: 50px;
       line-height: 1em;
-      padding: 0 0 0 1px;
     }
   }
 }

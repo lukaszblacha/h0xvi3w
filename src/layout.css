@@ -47,13 +47,33 @@ hv-tabs {
         flex: 0 0 auto;
 
         & > li {
+            display: flex;
+            align-items: center;
+            gap: .8ch;
             background-color: #FFF2;
             border-radius: 2px 2px 0 0;
             border-bottom-width: 0;
             padding: 1px 5px;
+            cursor: grab;
 
             &.active {
                 background-color: var(--color-mild-text);
+            }
+
+            .close {
+                display: block;
+                aspect-ratio: 1;
+                background-color: #0003;
+                border-radius: 100%;
+                flex-shrink: 0;
+                width: 16px;
+                height: 16px;
+                text-align: center;
+                cursor: pointer;
+
+                &:hover {
+                    background-color: #0008;
+                }
             }
         }
     }

@@ -98,7 +98,7 @@ export class ValuesExplorer extends Panel {
       ].map(
         ([name, value]) => $("tr", {}, [
           $("td", {}, [name]),
-          $("td",{}, [String(value)])
+          $("td",{ class: "right" }, [String(value)])
         ])
       )
     );

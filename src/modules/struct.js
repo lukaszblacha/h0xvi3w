@@ -119,7 +119,7 @@ export class Struct extends Panel {
         },
         [
           $("td", {}, key),
-          $("td", {}, String(value)),
+          $("td", { class: "right" }, String(value)),
         ])
       );
     });

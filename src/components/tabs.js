@@ -102,7 +102,11 @@ export class Tabs extends HTMLElement {
     });
 
     labels.map((label, index) => {
-      const $el = $("li", { draggable: true, "data-index": index, class: index === this.activeTabIndex ? "active" : undefined }, label);
+      const $el = $(
+        "li",
+        { draggable: true, "data-index": index, class: index === this.activeTabIndex ? "active" : undefined },
+        [label, $("span", { title: `Close "${label}" window`, class: "close" }, "✕")]
+      );
       $el.addEventListener("dragstart", this.onTabDragStart);
       this.$list.appendChild($el);
     });
@@ -113,6 +117,8 @@ export class Tabs extends HTMLElement {
   onListItemClick({ target }) {
     if (target.tagName.toLowerCase() === "li") {
       this.setActiveTabIndex(Array.from(target.parentNode.children).indexOf(target));
+    } else if (target.tagName.toLowerCase() === "span") {
+      this.$container.removeChild(this.$container.children[parseInt(target.parentNode.dataset.index)]);
     }
   }
 

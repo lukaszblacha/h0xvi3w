@@ -25,7 +25,7 @@ export class StructTemplate extends Panel {
     this.onFormatChange = this.onFormatChange.bind(this);
     this.onFieldChange = this.onFieldChange.bind(this);
     this.save = this.save.bind(this);
-    this.remove = this.remove.bind(this);
+    this.removeTemplate = this.removeTemplate.bind(this);
     this.close = this.close.bind(this);
 
     this.storage = storage;
@@ -38,7 +38,7 @@ export class StructTemplate extends Panel {
     Array.from(this.querySelectorAll("table.spec input"))
       .forEach(e => bindAll(e, { change: this.onFieldChange }));
     bindAll(this.querySelector(`button[name="save"]`), { click: this.save });
-    bindAll(this.querySelector(`button[name="remove"]`), { click: this.remove });
+    bindAll(this.querySelector(`button[name="remove"]`), { click: this.removeTemplate });
     bindAll(this.querySelector(`button[name="cancel"]`), { click: this.close });
   }
 
@@ -47,7 +47,7 @@ export class StructTemplate extends Panel {
     Array.from(this.querySelectorAll("table.spec input"))
       .forEach(e => unbindAll(e, { change: this.onFieldChange }));
     unbindAll(this.querySelector(`button[name="save"]`), { click: this.save });
-    unbindAll(this.querySelector(`button[name="remove"]`), { click: this.remove });
+    unbindAll(this.querySelector(`button[name="remove"]`), { click: this.removeTemplate });
     unbindAll(this.querySelector(`button[name="cancel"]`), { click: this.close });
   }
 
@@ -108,7 +108,7 @@ export class StructTemplate extends Panel {
     this.remove();
   }
 
-  remove() {
+  removeTemplate() {
     const { format, spec } = this;
     packer(format, spec); // validation
     const structs = this.storage.load();
@@ -142,20 +142,20 @@ export class StructTemplate extends Panel {
       $node.innerText = "";
       $node.appendChild($("thead", {}, [
         $("tr", {}, [
-          $("th", {}, ["Property name"]),
-          $("th", {}, ["Type"]),
-          $("th", {}, ["Offset"]),
-          $("th", {}, ["Quantity"]),
-          $("th", {}, ["Size"]),
+          $("th", { class: "left" }, ["Property name"]),
+          $("th", { class: "right" }, ["Type"]),
+          $("th", { class: "right" }, ["Offset"]),
+          $("th", { class: "right" }, ["Quantity"]),
+          $("th", { class: "right" }, ["Size"]),
         ])
       ]));
       tokens.forEach((token, index) => {
         $node.appendChild($("tr", {}, [
           $("td", {}, $("input", { value: spec[index] })),
-          $("td", {}, token.char),
-          $("td", {}, String(token.offset)),
-          $("td", {}, String(token.length)),
-          $("td", {}, [`${token.size * token.length}B`]),
+          $("td", { class: "right" }, token.char),
+          $("td", { class: "right" }, String(token.offset)),
+          $("td", { class: "right" }, String(token.length)),
+          $("td", { class: "right" }, [`${token.size * token.length}B`]),
         ]));
       });
     } catch {

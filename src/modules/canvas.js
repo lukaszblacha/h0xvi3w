@@ -27,7 +27,7 @@ export class Canvas extends Panel {
   constructor(editor) {
     super({ label: "Canvas" }, {
       body: $("div", { class: "canvas-body" }, [$("canvas")]),
-      footer: [
+      header: [
         "offset:",
         $("input", { type: "number", name: "offset", min: 0, value: parseInt(defaults["offset"]) }),
         "width:",

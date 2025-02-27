@@ -3,4 +3,8 @@ hv-struct.panel {
     padding: 0;
     flex-direction: column;
   }
+
+  input[name="offset"] {
+    width: 50px;
+  }
 }

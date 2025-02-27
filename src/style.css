@@ -41,7 +41,7 @@ body {
   font-family: monospace !important;
 }
 
-input, button {
+input, button, select {
   display: block;
   position: relative;
   appearance: none;
@@ -62,8 +62,15 @@ input, button {
   }
 }
 
-button {
+button, select {
   width: unset;
+  flex-shrink: 0;
+}
+
+input[type="number"] {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: right;
   flex-shrink: 0;
 }
 
@@ -82,7 +89,7 @@ input[type="checkbox"][label] {
 .panel-header {
   box-shadow: 0 2px 3px #0007;
 }
-input, button {
+input, button, select {
   border-color: #0008;
 }
 
@@ -112,6 +119,10 @@ td:first-child {
   width: 4ch;
 }
 
+tr:hover td {
+  background-color: #FFA50080;
+}
+
 tr:nth-child(2n) {
   background-color: #fff1;
 }
@@ -119,4 +130,14 @@ tr:nth-child(2n) {
 td {
   padding: 0 4px;
   text-align: center;
+}
+
+td, th {
+  &.right {
+    text-align: right;
+  }
+
+  &.left {
+    text-align: left;
+  }
 }
