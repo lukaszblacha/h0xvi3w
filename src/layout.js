@@ -46,8 +46,9 @@ const defaultLayout = {
               "items": [
                 {
                   "type": "hv-canvas",
-                  "width": "30",
-                  "offset": "0"
+                  "width": "128",
+                  "offset": "0",
+                  "bpp": "1"
                 }
               ]
             }
@@ -133,6 +134,7 @@ export class Layout extends HTMLElement {
         component = new Canvas(this.editor);
         component.setAttribute("width", cfg.width);
         component.setAttribute("offset", cfg.offset);
+        component.setAttribute("bpp", cfg.bpp);
         break;
       }
       case "hv-struct": {
