@@ -44,12 +44,7 @@ const defaultLayout = {
               "type": "hv-tabs",
               "tabs-position": "top",
               "items": [
-                {
-                  "type": "hv-canvas",
-                  "width": "128",
-                  "offset": "0",
-                  "bpp": "1"
-                }
+                { "type": "hv-canvas" }
               ]
             }
           ]
@@ -135,6 +130,7 @@ export class Layout extends HTMLElement {
         component.setAttribute("width", cfg.width);
         component.setAttribute("offset", cfg.offset);
         component.setAttribute("bpp", cfg.bpp);
+        component.setAttribute("scanline", cfg.scanline);
         break;
       }
       case "hv-struct": {
