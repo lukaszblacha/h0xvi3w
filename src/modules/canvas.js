@@ -27,16 +27,24 @@ export class Canvas extends Panel {
   constructor(editor) {
     super({ label: "Canvas" }, {
       body: $("div", { class: "canvas-body" }, [$("canvas")]),
-      header: [
-        "offset:",
-        $("input", { type: "number", name: "offset", min: 0, value: parseInt(defaults["offset"]) }),
-        "width:",
-        $("input", { type: "number", name: "width", min: 3, value: parseInt(defaults["width"]) }),
-        "bpp:",
-        $("input", { type: "number", name: "bpp", min: 1, value: parseInt(defaults["bpp"]) }),
-        "scanline:",
-        $("input", { type: "number", name: "scanline", min: 0, value: parseInt(defaults["scanline"]) })
-      ]
+      header: $("div", { class: "panel-toolbar" }, [
+        $("label", {}, [
+          $("span", {}, ["Offset"]),
+          $("input", { type: "number", name: "offset", min: 0, value: parseInt(defaults["offset"]) })
+        ]),
+        $("label", {}, [
+          $("span", {}, ["Width"]),
+          $("input", { type: "number", name: "width", min: 3, value: parseInt(defaults["width"]) }),
+        ]),
+        $("label", {}, [
+          $("span", {}, ["Bytes/pixel"]),
+          $("input", { type: "number", name: "bpp", min: 1, value: parseInt(defaults["bpp"]) }),
+        ]),
+        $("label", {}, [
+          $("span", {}, ["Scanline offset"]),
+          $("input", { type: "number", name: "scanline", min: 0, value: parseInt(defaults["scanline"]) })
+        ]),
+      ])
     });
 
     this.onChange = debounce(this.onChange.bind(this), 200);
@@ -161,6 +169,7 @@ export class Canvas extends Panel {
   };
 
   onPixelClick({ offsetX, offsetY, target }) {
+    if (target !== this.$canvas) return;
     const { $canvas, editor, width, offset, bpp, scanline } = this;
     const unit = $canvas.scrollWidth / width;
     const x = Math.floor(offsetX / unit);

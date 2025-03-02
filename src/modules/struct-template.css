@@ -1,9 +1,18 @@
 hv-struct-template.panel {
     box-shadow: 0 0 10px #000;
-    min-height: 30vh;
 
     .format {
       width: -webkit-fill-available;
       flex-grow: 1;
+    }
+
+    .panel-body {
+      min-height: 30vh;
+      min-width: 50vw;
+      overflow: hidden;
+    }
+
+    .spec {
+      overflow: auto;
     }
 }

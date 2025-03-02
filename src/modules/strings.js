@@ -11,11 +11,18 @@ export class Strings extends Panel {
 
   constructor(editor) {
     super({ label: "Strings" }, {
-      header: [
-        $("input", { type: "search", name: "term", placeholder: "Search" }),
-        $("input", { type: "number", name: "min-length", min: 3, max: 15, step: 1, value: 6 }),
-        $("input", { type: "checkbox", name: "case-sensitive", title: "Match case", label: "Aa" })
-      ],
+      header:
+        $("div", { class: "panel-toolbar" }, [
+          $("label", { class: "spacer" }, [
+            $("span", {}, ["Search"]),
+            $("input", { type: "search", name: "term" }),
+          ]),
+          $("label", {}, [
+            $("span", {}, ["Minimum length"]),
+            $("input", { type: "number", name: "min-length", min: 3, max: 15, step: 1, value: 6 }),
+          ]),
+          $("input", { type: "checkbox", name: "case-sensitive", title: "Match case", label: "Aa" })
+        ]),
       body: $("div", { class: "list" })
     });
 

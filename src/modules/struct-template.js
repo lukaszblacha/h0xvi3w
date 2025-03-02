@@ -6,25 +6,29 @@ export class StructTemplate extends Panel {
   constructor(storage, name = "struct") {
     super({}, {
       header: ["Edit structure"],
-      body: $("div", {}, [
+      body: [
         $("div", { class: "info" }, [
           "Simplified implementation of python's struct. ",
           $("a", { href: "https://docs.python.org/3/library/struct.html#format-characters", rel: "noopener, noreferrer", target: "_blank" }, ["learn more"]),
         ]),
         $("div", { class: "panel-toolbar" }, [
-          "name: ",
-          $("input", { class: "name", name: "name", value: name }),
-          "format: ",
-          $("input", { class: "format", name: "format", value: ">" }),
+          $("label", {}, [
+            $("span", {}, ["Name"]),
+            $("input", { class: "name", name: "name", value: name }),
+          ]),
+          $("label", {}, [
+            $("span", {}, ["Format"]),
+            $("input", { class: "format", name: "format", value: ">" }),
+          ]),
         ]),
-        $("table", { class: "spec" }),
-      ]),
-      footer: [
+        $("div", { class: "spec" }),
+      ],
+      footer: $("div", { class: "panel-toolbar" }, [
+        $("button", { name: "remove", title: "Remove" }, "Remove"),
         $("div", { class: "spacer" }),
-        $("button", { name: "save", title: "Save" }, "💾 Save"),
-        $("button", { name: "remove", title: "Remove" }, "🗑 Remove"),
-        $("button", { name: "cancel", title: "Cancel" }, "✕ Cancel")
-      ]
+        $("button", { name: "cancel", title: "Cancel" }, "Cancel"),
+        $("button", { name: "save", title: "Save" }, "Save"),
+      ])
     });
 
     this.onFormatChange = this.onFormatChange.bind(this);
@@ -40,7 +44,7 @@ export class StructTemplate extends Panel {
   connectedCallback() {
     super.connectedCallback();
     bindAll(this.querySelector(`input[name="format"]`), { change: this.onFormatChange });
-    Array.from(this.querySelectorAll("table.spec input"))
+    Array.from(this.querySelectorAll(".spec input"))
       .forEach(e => bindAll(e, { change: this.onFieldChange }));
     bindAll(this.querySelector(`button[name="save"]`), { click: this.save });
     bindAll(this.querySelector(`button[name="remove"]`), { click: this.removeTemplate });
@@ -49,7 +53,7 @@ export class StructTemplate extends Panel {
 
   disconnectedCallback() {
     unbindAll(this.querySelector(`input[name="format"]`), { change: this.onFormatChange });
-    Array.from(this.querySelectorAll("table.spec input"))
+    Array.from(this.querySelectorAll(".spec input"))
       .forEach(e => unbindAll(e, { change: this.onFieldChange }));
     unbindAll(this.querySelector(`button[name="save"]`), { click: this.save });
     unbindAll(this.querySelector(`button[name="remove"]`), { click: this.removeTemplate });
@@ -143,9 +147,8 @@ export class StructTemplate extends Panel {
     const { format } = this;
     try {
       const { tokens } = packer(format, spec);
-      const $node = this.querySelector("table.spec");
-      $node.innerText = "";
-      $node.appendChild($("thead", {}, [
+      const $table = $("table");
+      $table.appendChild($("thead", {}, [
         $("tr", {}, [
           $("th", { class: "left" }, ["Property name"]),
           $("th", { class: "right" }, ["Type"]),
@@ -155,7 +158,7 @@ export class StructTemplate extends Panel {
         ])
       ]));
       tokens.forEach((token, index) => {
-        $node.appendChild($("tr", {}, [
+        $table.appendChild($("tr", {}, [
           $("td", {}, $("input", { value: spec[index] })),
           $("td", { class: "right" }, token.char),
           $("td", { class: "right" }, String(token.offset)),
@@ -163,6 +166,9 @@ export class StructTemplate extends Panel {
           $("td", { class: "right" }, [`${token.size * token.length}B`]),
         ]));
       });
+      const $node = this.querySelector(".spec");
+      $node.innerText = "";
+      $node.appendChild($table);
     } catch {
       // noop
     }

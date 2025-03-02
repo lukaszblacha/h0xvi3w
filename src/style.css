@@ -111,6 +111,23 @@ input[type="checkbox"][label]:checked:after {
   box-shadow: 0 -1px 2px #0008 inset;
 }
 
+label {
+  position: relative;
+  display: flex;
+
+  span {
+    position: absolute;
+    left: 5px;
+    top: 0;
+    z-index: 1;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    color: #aaa;
+    font-size: 9px;
+    text-transform: lowercase;
+  }
+}
+
 a {
   display: inline-block;
   padding: 0 .5lh;

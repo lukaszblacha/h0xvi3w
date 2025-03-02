@@ -27,7 +27,7 @@ hv-canvas.panel {
     color: inherit;
 
     input[type="number"] {
-      width: 50px;
+      width: 90px;
       line-height: 1em;
     }
   }

@@ -8,7 +8,7 @@
 
   .panel-header, .panel-body, .panel-footer {
     display: flex;
-    padding: .2ch 1ch;
+    padding: 0 1ch;
 
     &:empty { display: none; }
   }
@@ -30,6 +30,10 @@
     align-items: center;
     flex-direction: row;
     justify-content: space-between;
+
+    &:has(.panel-toolbar) {
+      padding: 0;
+    }
   }
 
   .panel-header {
@@ -46,7 +50,8 @@
     display: flex;
     background-color: var(--color-input-container-bg);
     align-self: flex-start;
+    align-items: flex-end;
     width: 100%;
-    padding: .2ch 1ch;
+    padding: 7px 1ch;
   }
 }

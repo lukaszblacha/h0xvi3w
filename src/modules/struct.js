@@ -10,11 +10,16 @@ export class Struct extends Panel {
     super({ label: "Structures" }, {
       body: [
         $("div", { class: "panel-toolbar" }, [
-          "offset: ",
-          $("input", { type: "number", name: "offset", min: 0, value: 0 }),
-          "template: ",
-          $("select", { name: "template" }),
+          $("label", {}, [
+            $("span", {}, ["Offset"]),
+            $("input", { type: "number", name: "offset", min: 0, value: 0 }),
+          ]),
+          $("label", {}, [
+            $("span", {}, ["Template"]),
+            $("select", { name: "template" }),
+          ]),
           $("button", { name: "edit", title: "Edit" }, "✎"),
+          $("div", { class: "spacer" }),
           $("button", { name: "parse", title: "Parse" }, "▶"),
         ]),
         $("div", { class: "dialog" }),
