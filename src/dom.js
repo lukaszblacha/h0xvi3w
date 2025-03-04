@@ -18,7 +18,7 @@ export const cn = (...args) => args.filter(Boolean).join(" ");
 
 export const parseAttribute = (obj, name, defaultValue) => {
   const attr = obj.getAttribute(name);
-  return attr === "undefined" ? defaultValue : attr;
+  return [null, "undefined"].includes(attr) ? defaultValue : attr;
 }
 
 export const bindAll = ($node, events = {}) => {
