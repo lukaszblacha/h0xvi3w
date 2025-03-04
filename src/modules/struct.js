@@ -7,7 +7,7 @@ import { HVStorage } from "../utils/storage.js";
 
 export class Struct extends Panel {
   constructor(editor) {
-    super({ label: "Structures" }, {
+    super({ label: "Structures", disposable: true }, {
       body: [
         $("div", { class: "panel-toolbar" }, [
           $("label", {}, [

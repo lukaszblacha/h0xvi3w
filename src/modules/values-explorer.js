@@ -34,7 +34,7 @@ export class ValuesExplorer extends Panel {
 
   constructor(editor) {
     super(
-      { label: "Values explorer" },
+      { label: "Values explorer", disposable: true },
       { body: [], footer: [$("div")] }
     );
 

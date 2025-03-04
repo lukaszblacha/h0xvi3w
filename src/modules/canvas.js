@@ -25,7 +25,7 @@ export class Canvas extends Panel {
   static observedAttributes = ["width", "offset", "bpp", "scanline"];
 
   constructor(editor) {
-    super({ label: "Canvas" }, {
+    super({ label: "Canvas", disposable: true }, {
       body: $("div", { class: "canvas-body" }, [$("canvas")]),
       header: $("div", { class: "panel-toolbar" }, [
         $("label", {}, [

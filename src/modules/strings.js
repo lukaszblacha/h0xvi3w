@@ -10,7 +10,7 @@ export class Strings extends Panel {
   static observedAttributes = ["min-length", "case-sensitive"];
 
   constructor(editor) {
-    super({ label: "Strings" }, {
+    super({ label: "Strings", disposable: true }, {
       header:
         $("div", { class: "panel-toolbar" }, [
           $("label", { class: "spacer" }, [

@@ -94,18 +94,21 @@ export class Tabs extends HTMLElement {
       }
     }
 
-    const labels = $children.map(($el, i) => $el.getAttribute("label") || `Tab ${i}`);
+    const labels = $children.map(($el, i) => ({
+      label: $el.getAttribute("label") || `Tab ${i}`,
+      disposable: $el.hasAttribute("disposable"),
+    }));
 
     Array.from(this.$list.children).forEach($el => {
       $el.removeEventListener("dragstart", this.onTabDragStart);
       this.$list.removeChild($el);
     });
 
-    labels.map((label, index) => {
+    labels.map(({ label, disposable }, index) => {
       const $el = $(
         "li",
         { draggable: true, "data-index": index, class: index === this.activeTabIndex ? "active" : undefined },
-        [label, $("span", { title: `Close "${label}" window`, class: "close" }, "✕")]
+        [label, disposable && $("span", { title: `Close "${label}" window`, class: "close" }, "✕")].filter(Boolean)
       );
       $el.addEventListener("dragstart", this.onTabDragStart);
       this.$list.appendChild($el);
