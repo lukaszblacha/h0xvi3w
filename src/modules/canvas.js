@@ -1,4 +1,4 @@
-import { $, bindAll, unbindAll, debounce } from "../dom.js";
+import { $, bindAll, unbindAll, debounce, parseAttribute } from "../dom.js";
 import { Panel } from "../components/panel.js";
 
 const defaults = {
@@ -118,19 +118,19 @@ export class Canvas extends Panel {
   }
 
   get width() {
-    return parseInt(this.getAttribute("width") ?? defaults["width"]);
+    return parseInt(parseAttribute(this, "width", defaults["width"]));
   }
 
   get offset() {
-    return parseInt(this.getAttribute("offset") ?? defaults["offset"]);
+    return parseInt(parseAttribute(this, "offset", defaults["offset"]));
   }
 
   get bpp() {
-    return parseInt(this.getAttribute("bpp") ?? defaults["bpp"]);
+    return parseInt(parseAttribute(this, "bpp", defaults["bpp"]));
   }
 
   get scanline() {
-    return parseInt(this.getAttribute("scanline") ?? defaults["scanline"]);
+    return parseInt(parseAttribute(this, "scanline", defaults["scanline"]));
   }
 
   handleInputChange(e) {

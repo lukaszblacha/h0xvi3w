@@ -1,4 +1,4 @@
-import { $, bindAll, unbindAll, debounce } from "../dom.js";
+import { $, bindAll, unbindAll, debounce, parseAttribute } from "../dom.js";
 import { Panel } from "../components/panel.js";
 
 const defaults = {
@@ -82,11 +82,11 @@ export class Strings extends Panel {
   }
 
   get minLength() {
-    return Number(this.getAttribute("min-length") ?? defaults["min-length"]);
+    return Number(parseAttribute(this, "min-length", defaults["min-length"]));
   }
 
   get caseSensitive() {
-    return (this.getAttribute("case-sensitive") ?? defaults["case-sensitive"]) === "true";
+    return parseAttribute(this, "case-sensitive", defaults["case-sensitive"]) === "true";
   }
 
   handleInputChange(e) {

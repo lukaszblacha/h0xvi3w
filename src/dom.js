@@ -16,6 +16,11 @@ export const $ = (tag, attributes = {}, content = []) => {
 
 export const cn = (...args) => args.filter(Boolean).join(" ");
 
+export const parseAttribute = (obj, name, defaultValue) => {
+  const attr = obj.getAttribute(name);
+  return attr === "undefined" ? defaultValue : attr;
+}
+
 export const bindAll = ($node, events = {}) => {
   Object.entries(events).forEach(([name, handlers = []]) => {
     if (typeof handlers === "function") handlers = [handlers];

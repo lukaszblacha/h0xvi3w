@@ -1,4 +1,4 @@
-import { $, bindAll, unbindAll, debounce } from "../dom.js";
+import { $, bindAll, unbindAll, debounce, parseAttribute } from "../dom.js";
 import { Panel } from "../components/panel.js";
 import { readInt } from "../structures/buffer.js";
 
@@ -79,7 +79,7 @@ export class ValuesExplorer extends Panel {
   }
 
   get bigEndian() {
-    return (this.getAttribute("big-endian") ?? defaults["big-endian"]) === "true";
+    return parseAttribute(this, "big-endian", defaults["big-endian"]) === "true";
   }
 
   render() {

@@ -1,4 +1,4 @@
-import { $, bindAll, unbindAll } from "../dom.js";
+import { $, bindAll, parseAttribute, unbindAll } from "../dom.js";
 import { Panel } from "../components/panel.js";
 import {highlight, range, setCaret} from "../utils/text.js";
 import { DataBuffer } from "../structures/buffer.js";
@@ -127,11 +127,11 @@ export class HexEditor extends Panel {
   }
 
   get mode() {
-    return this.getAttribute("mode") ?? defaults["mode"];
+    return parseAttribute(this, "mode", defaults["mode"]);
   }
 
   get activeViews() {
-    return parseViewsAttribute(this.getAttribute("views") ?? defaults["views"]);
+    return parseViewsAttribute(parseAttribute(this, "views", defaults["views"]));
   }
 
   bindViewEventHandlers(view) {
