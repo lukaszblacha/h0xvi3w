@@ -80,7 +80,7 @@ export class StructTemplate extends Panel {
     try {
       const { tokens } = packer(this.format);
       let spec = [];
-      [...this.querySelectorAll(`table.spec input`)].forEach((i, index) => spec.push(i.value || `prop${index}`));
+      [...this.querySelectorAll(`.spec input`)].forEach((i, index) => spec.push(i.value || `prop${index}`));
       if (spec.length < tokens.length) {
         spec = spec.concat(new Array(tokens.length - spec.length).fill(0).map((_, i) => `prop${i + spec.length}`));
       }
