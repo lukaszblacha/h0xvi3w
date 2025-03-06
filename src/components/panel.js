@@ -1,20 +1,10 @@
 import { $ } from "../dom.js";
 
-export class Panel extends HTMLElement {
-  constructor(attributes = {}, { header, body, footer } = {}) {
-    super();
-    this.initialized = false;
-    Object.entries(attributes).forEach(([name, value]) => this.setAttribute(name, value));
-    if (header) this.appendChild($("div", { class: "panel-header" }, header));
-    if (body) this.appendChild($("div", { class: "panel-body" }, body));
-    if (footer) this.appendChild($("div", { class: "panel-footer" }, footer));
-  }
-
-  connectedCallback() {
-    if (!this.initialized) {
-      this.initialized = true;
-      this.classList.add("panel");
-    }
-  }
+export const createPanel = (obj, { label, disposable }, { header, body, footer } = {}) => {
+  obj.setAttribute("label", label);
+  obj.setAttribute("disposable", disposable ? "true" : "false");
+  obj.classList.add("panel");
+  if (header) obj.appendChild($("div", { class: "panel-header" }, header));
+  if (body) obj.appendChild($("div", { class: "panel-body" }, body));
+  if (footer) obj.appendChild($("div", { class: "panel-footer" }, footer));
 }
-customElements.define("hv-panel", Panel);

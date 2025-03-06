@@ -66,10 +66,12 @@ hv-tabs {
                 background-color: #0003;
                 border-radius: 100%;
                 flex-shrink: 0;
-                width: 16px;
-                height: 16px;
+                width: 1em;
+                height: 1em;
                 text-align: center;
                 cursor: pointer;
+                font-size: 14px;
+                line-height: 1;
 
                 &:hover {
                     background-color: #0008;
@@ -93,7 +95,7 @@ hv-tabs {
             display: none !important;
         }
 
-        &.drop-center:after, &.drop-right:after, &.drop-left:after, &.drop-top:after, &.drop-bottom:after {
+        &:after {
             position: absolute;
             border: solid 1px #FFF5;
             border-radius: 6px;
@@ -101,7 +103,13 @@ hv-tabs {
             content: "";
             pointer-events: none;
             user-select: none;
-            transition: left 200ms, right 200ms, top 200ms, bottom 200ms;
+            transition: left 200ms, right 200ms, top 200ms, bottom 200ms, opacity 200ms 100ms;
+            inset: 50%;
+            opacity: 0;
+        }
+
+        &.drop-center:after, &.drop-right:after, &.drop-left:after, &.drop-top:after, &.drop-bottom:after {
+            opacity: 1;
         }
 
         &.drop-center:after {

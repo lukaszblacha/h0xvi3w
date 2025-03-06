@@ -1,30 +1,27 @@
-export class Split extends HTMLElement {
+import { CustomElement } from "../dom.js";
+
+const fields = {
+  orientation: { type: "string", defaultValue: "horizontal" },
+};
+
+export class Split extends CustomElement {
   static observedAttributes = ["orientation"];
 
   constructor() {
-    super();
-    this.initialized = false;
-
-    this.onChildNodesChange = this.onChildNodesChange.bind(this);
+    super(fields);
+    this.classList.add("split");
   }
 
   connectedCallback() {
-    if (!this.initialized) {
-      this.initialized = true;
-      this.classList.add("split");
-    }
-
-    this.observer = new MutationObserver(this.onChildNodesChange);
+    super.connectedCallback();
+    this.observer = new MutationObserver(this.onChildNodesChange.bind(this));
     this.observer.observe(this, { childList: true });
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
     this.observer.disconnect();
     this.observer = null;
-  }
-
-  get orientation() {
-    return this.getAttribute("orientation") === "vertical" ? "vertical" : "horizontal";
   }
 
   onChildNodesChange() {

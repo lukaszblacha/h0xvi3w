@@ -1,4 +1,4 @@
-import { $, bindAll, unbindAll } from "../dom.js";
+import { $, CustomElement } from "../dom.js";
 
 const toMenuItems = (items) => {
   if (!Array.isArray(items)) return [];
@@ -19,18 +19,13 @@ const toMenuItems = (items) => {
   });
 }
 
-export class MainMenu extends HTMLElement {
+export class MainMenu extends CustomElement {
   constructor() {
-    super();
-    this.onClick = this.onClick.bind(this);
-  }
+    super({});
 
-  connectedCallback() {
-    bindAll(this, { click: this.onClick });
-  }
-
-  disconnectedCallback() {
-    unbindAll(this, { click: this.onClick });
+    this._events = [
+      [this, { click: this.onClick.bind(this) }]
+    ];
   }
 
   onClick(e) {

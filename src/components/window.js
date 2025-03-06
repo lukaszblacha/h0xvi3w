@@ -1,10 +1,9 @@
-import {bindAll, unbindAll} from "../dom.js";
+import { CustomElement } from "../dom.js";
 import { range } from "../utils/text.js";
 
-export class DataWindow extends HTMLElement {
+export class DataWindow extends CustomElement {
   constructor({ buffer, renderByte } = {}) {
-    super();
-    this.initialized = false;
+    super({});
 
     this.onBufferChange = this.onBufferChange.bind(this);
     this.onSelectionChange = this.onSelectionChange.bind(this);
@@ -17,35 +16,20 @@ export class DataWindow extends HTMLElement {
     this.$textNode = document.createTextNode(" ");
     this.appendChild(this.$textNode);
     this.selectionRange = range(this.$textNode, 0, 0);
-  }
 
-  connectedCallback() {
-    if (!this.initialized) {
-      this.initialized = true;
+    this.classList.add("window");
+    this.setAttribute("spellcheck", false);
+    this.setAttribute("contenteditable", "plaintext-only");
+    this.setAttribute("autocomplete", "off");
 
-      this.classList.add("window");
-      this.setAttribute("spellcheck", false);
-      this.setAttribute("contenteditable", "plaintext-only");
-      this.setAttribute("autocomplete", "off");
-    }
-
-    document.addEventListener("selectionchange", this.onSelectionChange);
-
-    bindAll(this.buffer, {
-      overwrite: this.onBufferChange,
-      insert: this.onBufferChange,
-      delete: this.onBufferChange,
-    });
-  }
-
-  disconnectedCallback() {
-    document.removeEventListener("selectionchange", this.onSelectionChange);
-
-    unbindAll(this.buffer, {
-      overwrite: this.onBufferChange,
-      insert: this.onBufferChange,
-      delete: this.onBufferChange,
-    });
+    this._events = [
+      [document, { "selectionchange": this.onSelectionChange }],
+      [this.buffer, {
+        overwrite: this.onBufferChange,
+        insert: this.onBufferChange,
+        delete: this.onBufferChange,
+      }]
+    ];
   }
 
   onBufferChange({ detail, type }) {
@@ -88,13 +72,11 @@ export class DataWindow extends HTMLElement {
     let { focusNode, baseOffset, extentOffset } = document.getSelection();
     if (focusNode !== this.$textNode) return;
 
-    const detail = {
+    this.trigger("selectionchange", {
       focusNode,
       startOffset: baseOffset,
       endOffset: extentOffset
-    };
-
-    this.dispatchEvent(new CustomEvent("selectionchange", { detail }));
+    });
   }
 
   /**

@@ -1,35 +1,12 @@
-import { $, bindAll, unbindAll } from "../dom.js";
+import { $, CustomElement } from "../dom.js";
 import { packer } from "../utils/packer.js";
-import { Panel } from "../components/panel.js";
+import { createPanel } from "../components/panel.js";
 
-export class StructTemplate extends Panel {
+export class StructTemplate extends CustomElement {
   constructor(storage, name = "struct") {
-    super({}, {
-      header: ["Edit structure"],
-      body: [
-        $("div", { class: "info" }, [
-          "Simplified implementation of python's struct. ",
-          $("a", { href: "https://docs.python.org/3/library/struct.html#format-characters", rel: "noopener, noreferrer", target: "_blank" }, ["learn more"]),
-        ]),
-        $("div", { class: "panel-toolbar" }, [
-          $("label", {}, [
-            $("span", {}, ["Name"]),
-            $("input", { class: "name", name: "name", value: name }),
-          ]),
-          $("label", {}, [
-            $("span", {}, ["Format"]),
-            $("input", { class: "format", name: "format", value: ">" }),
-          ]),
-        ]),
-        $("div", { class: "spec" }),
-      ],
-      footer: $("div", { class: "panel-toolbar" }, [
-        $("button", { name: "remove", title: "Remove" }, "Remove"),
-        $("div", { class: "spacer" }),
-        $("button", { name: "cancel", title: "Cancel" }, "Cancel"),
-        $("button", { name: "save", title: "Save" }, "Save"),
-      ])
-    });
+    super({});
+
+    this.storage = storage;
 
     this.onFormatChange = this.onFormatChange.bind(this);
     this.onFieldChange = this.onFieldChange.bind(this);
@@ -37,27 +14,46 @@ export class StructTemplate extends Panel {
     this.removeTemplate = this.removeTemplate.bind(this);
     this.close = this.close.bind(this);
 
-    this.storage = storage;
+    createPanel(
+      this,
+      {},
+      {
+        header: ["Edit structure"],
+        body: [
+          $("div", { class: "info" }, [
+            "Simplified implementation of python's struct. ",
+            $("a", { href: "https://docs.python.org/3/library/struct.html#format-characters", rel: "noopener, noreferrer", target: "_blank" }, ["learn more"]),
+          ]),
+          $("div", { class: "panel-toolbar" }, [
+            $("label", {}, [
+              $("span", {}, ["Name"]),
+              $("input", { class: "name", name: "name", value: name }),
+            ]),
+            $("label", {}, [
+              $("span", {}, ["Format"]),
+              $("input", { class: "format", name: "format", value: ">" }),
+            ]),
+          ]),
+          $("div", { class: "spec" }),
+        ],
+        footer: $("div", { class: "panel-toolbar" }, [
+          $("button", { name: "remove", title: "Remove" }, "Remove"),
+          $("div", { class: "spacer" }),
+          $("button", { name: "cancel", title: "Cancel" }, "Cancel"),
+          $("button", { name: "save", title: "Save" }, "Save"),
+        ])
+      }
+    );
+
+    this._events = [
+      [this.querySelector(".spec"), { change: this.onFieldChange }],
+      [this.querySelector(`input[name="format"]`), { change: this.onFormatChange }],
+      [this.querySelector(`button[name="save"]`), { click: this.save }],
+      [this.querySelector(`button[name="remove"]`), { click: this.removeTemplate }],
+      [this.querySelector(`button[name="cancel"]`), { click: this.close }],
+    ];
+
     this.load(name);
-  }
-
-  connectedCallback() {
-    super.connectedCallback();
-    bindAll(this.querySelector(`input[name="format"]`), { change: this.onFormatChange });
-    Array.from(this.querySelectorAll(".spec input"))
-      .forEach(e => bindAll(e, { change: this.onFieldChange }));
-    bindAll(this.querySelector(`button[name="save"]`), { click: this.save });
-    bindAll(this.querySelector(`button[name="remove"]`), { click: this.removeTemplate });
-    bindAll(this.querySelector(`button[name="cancel"]`), { click: this.close });
-  }
-
-  disconnectedCallback() {
-    unbindAll(this.querySelector(`input[name="format"]`), { change: this.onFormatChange });
-    Array.from(this.querySelectorAll(".spec input"))
-      .forEach(e => unbindAll(e, { change: this.onFieldChange }));
-    unbindAll(this.querySelector(`button[name="save"]`), { click: this.save });
-    unbindAll(this.querySelector(`button[name="remove"]`), { click: this.removeTemplate });
-    unbindAll(this.querySelector(`button[name="cancel"]`), { click: this.close });
   }
 
   get name() {
@@ -146,15 +142,15 @@ export class StructTemplate extends Panel {
   render(spec = this.spec) {
     const { format } = this;
     try {
-      const { tokens } = packer(format, spec);
+      const { tokens } = packer(format);
       const $table = $("table");
       $table.appendChild($("thead", {}, [
         $("tr", {}, [
-          $("th", { class: "left" }, ["Property name"]),
-          $("th", { class: "right" }, ["Type"]),
-          $("th", { class: "right" }, ["Offset"]),
-          $("th", { class: "right" }, ["Quantity"]),
-          $("th", { class: "right" }, ["Size"]),
+          $("th", { class: "left" }, "Property name"),
+          $("th", { class: "right" }, "Type"),
+          $("th", { class: "right" }, "Offset"),
+          $("th", { class: "right" }, "Quantity"),
+          $("th", { class: "right" }, "Size"),
         ])
       ]));
       tokens.forEach((token, index) => {

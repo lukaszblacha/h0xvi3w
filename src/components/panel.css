@@ -46,6 +46,7 @@
   }
 
   .panel-toolbar {
+    overflow: auto hidden;
     color: inherit;
     display: flex;
     background-color: var(--color-input-container-bg);

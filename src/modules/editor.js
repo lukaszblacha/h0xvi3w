@@ -1,6 +1,6 @@
-import { $, bindAll, parseAttribute, unbindAll } from "../dom.js";
-import { Panel } from "../components/panel.js";
-import {highlight, range, setCaret} from "../utils/text.js";
+import { $, CustomElement } from "../dom.js";
+import { createPanel } from "../components/panel.js";
+import { highlight, range, setCaret } from "../utils/text.js";
 import { DataBuffer } from "../structures/buffer.js";
 import { DataWindow } from "../components/window.js";
 import { binToU8, charToU8, hexToU8, u8ToBin, u8ToChar, u8ToHex } from "../utils/converters.js";
@@ -51,68 +51,74 @@ const createDataView = (name, buffer, lineWidth) => {
   return w;
 }
 
-const defaults = {
-  mode: "overwrite",
-  views: "hex,ascii",
+const attributes = {
+  mode: { type: "string", defaultValue: "overwrite" },
+  views: { type: "string", defaultValue: "hex,ascii" },
 };
 
-export class HexEditor extends Panel {
-  static observedAttributes = ["views", "mode"];
+export class HexEditor extends CustomElement {
+  static observedAttributes = Object.keys(attributes);
 
   constructor(lineWidth = 16) {
-    super({ label: "Editor" }, {
-      header: [
-        $("div", { class: "col-index" }, "offset"),
-        $("div", { class: "col-bin hidden" }, headerText(lineWidth, 8)),
-        $("div", { class: "col-hex hidden" }, headerText(lineWidth, 2)),
-        $("div", { class: "col-ascii hidden" }, headerText(lineWidth, 1)),
-      ],
-      body: [
-        $("div", { class: "col-index" }),
-        $("div", { class: "col-bin hidden" }),
-        $("div", { class: "col-hex hidden" }),
-        $("div", { class: "col-ascii hidden" })
-      ],
-      footer: [$("div"), $("div"), $("div"), $("div")],
-    });
-
-    this.onBeforeInput = this.onBeforeInput.bind(this);
-    this.onSelectionChange = this.onSelectionChange.bind(this);
-    this.switchMode = this.switchMode.bind(this);
+    super(attributes);
 
     this.lineWidth = lineWidth;
     this.fileName = "data.bin";
     this.selectionStartOffset = 0;
     this.selectionEndOffset = 0;
     this.buffer = new DataBuffer();
-    this.views = { bin: { active: false }, hex: { active: false }, ascii: { active: false } };
+    this.availableViews = { bin: { active: false }, hex: { active: false }, ascii: { active: false } };
+
+    createPanel(
+      this,
+      { label: "Editor" }, {
+        header: [
+          $("div", { class: "col-index" }, "offset"),
+          $("div", { class: "col-bin hidden" }, headerText(lineWidth, 8)),
+          $("div", { class: "col-hex hidden" }, headerText(lineWidth, 2)),
+          $("div", { class: "col-ascii hidden" }, headerText(lineWidth, 1)),
+        ],
+        body: [
+          $("div", { class: "col-index" }),
+          $("div", { class: "col-bin hidden" }),
+          $("div", { class: "col-hex hidden" }),
+          $("div", { class: "col-ascii hidden" })
+        ],
+        footer: [$("div"), $("div"), $("div"), $("div")],
+      }
+    );
+
+    this._events = [
+      [this.$dom.$mode, { click: this.switchMode.bind(this) }],
+      [this, {
+        beforeinput: this.onBeforeInput.bind(this),
+        selectionchange: this.onSelectionChange.bind(this)
+      }, false],
+    ];
   }
 
   connectedCallback() {
+    const views = this.views.split(",");
     super.connectedCallback();
-    if(this.activeViews.length < 1) {
+    if(views.length < 1) {
       this.setAttribute("views", "hex,ascii");
     }
 
-    Object.keys(this.views).forEach((view) => {
-      if (this.activeViews.includes(view)) this.enableView(view);
+    Object.keys(this.availableViews).forEach((view) => {
+      if (views.includes(view)) this.enableView(view);
       else this.disableView(view);
     });
 
-    bindAll(this.$dom.$mode, { click: this.switchMode });
     updateModeLabel(this.$dom.$mode, this.mode);
   }
 
-  disconnectedCallback() {
-    unbindAll(this.$dom.$mode, { click: this.switchMode });
-  }
-
   attributeChangedCallback(name, oldValue, newValue) {
-    if (!this.isConnected) return;
+    if ([undefined, null].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
+
     switch (name) {
       case "views": {
         const enabledViews = parseViewsAttribute(newValue);
-        Object.keys(this.views).forEach((view) => {
+        Object.keys(this.availableViews).forEach((view) => {
           if (enabledViews.includes(view)) this.enableView(view);
           else this.disableView(view);
         });
@@ -126,60 +132,38 @@ export class HexEditor extends Panel {
     }
   }
 
-  get mode() {
-    return parseAttribute(this, "mode", defaults["mode"]);
-  }
-
-  get activeViews() {
-    return parseViewsAttribute(parseAttribute(this, "views", defaults["views"]));
-  }
-
-  bindViewEventHandlers(view) {
-    bindAll(view, {
-      beforeinput: this.onBeforeInput,
-      selectionchange: this.onSelectionChange
-    });
-  }
-
-  unbindViewEventHandlers(view) {
-    unbindAll(view, {
-      beforeinput: this.onBeforeInput,
-      selectionchange: this.onSelectionChange
-    });
-  }
-
   enableView(name) {
-    if (!(name in this.views) || this.views[name].active) return;
-    const cfg = this.views[name];
+    if (!(name in this.availableViews) || this.availableViews[name].active) return;
+    const cfg = this.availableViews[name];
 
     cfg.window = createDataView(name, this.buffer, this.lineWidth);
     this.querySelector(`.panel-header .col-${name}`).classList.remove("hidden");
     this.querySelector(`.panel-body .col-${name}`).replaceWith(cfg.window);
     cfg.active = true;
-    this.bindViewEventHandlers(cfg.window);
+    // this.bindViewEventHandlers(cfg.window);
     cfg.window.render();
     this.updateSelection(this.selectionStartOffset, this.selectionEndOffset);
-    highlight("selection", Object.values(this.views).map(({ window }) => window?.selectionRange).filter(Boolean));
+    highlight("selection", Object.values(this.availableViews).map(({ window }) => window?.selectionRange).filter(Boolean));
   }
 
   disableView(name) {
-    if (!(name in this.views) || !this.views[name].active) return;
-    const cfg = this.views[name];
+    if (!(name in this.availableViews) || !this.availableViews[name].active) return;
+    const cfg = this.availableViews[name];
 
-    this.unbindViewEventHandlers(cfg.window);
+    // this.unbindViewEventHandlers(cfg.window);
     this.querySelector(`.panel-header .col-${name}`).classList.add("hidden");
     this.querySelector(`.panel-body .col-${name}`).replaceWith($("div", { class: `col-${name} hidden` }));
     cfg.active = false;
     delete cfg.window;
-    highlight("selection", Object.values(this.views).map(({ window }) => window?.selectionRange).filter(Boolean));
+    highlight("selection", Object.values(this.availableViews).map(({ window }) => window?.selectionRange).filter(Boolean));
   }
 
   toggleView(name) {
-    const { activeViews } = this;
-    if (activeViews.includes(name)) {
-      this.setAttribute("views", activeViews.filter((v) => v !== name).join(","));
+    const views = this.views.split(",");
+    if (views.includes(name)) {
+      this.setAttribute("views", views.filter((v) => v !== name).join(","));
     } else {
-      this.setAttribute("views", [...activeViews, name].join(","));
+      this.setAttribute("views", [...views, name].join(","));
     }
   }
 
@@ -209,22 +193,22 @@ export class HexEditor extends Panel {
         : `val: ${displayValue(buffer.at(this.selectionStartOffset))}`
     ) : "";
 
-    Object.entries(this.views).filter(([, { active }]) => active).forEach(([name, { window }])=> {
+    Object.entries(this.availableViews).filter(([, { active }]) => active).forEach(([name, { window }])=> {
       const { charsPerByte } = getViewSettings(name);
       window.setSelection(this.selectionStartOffset * charsPerByte, this.selectionEndOffset * charsPerByte);
     });
 
-    this.dispatchEvent(new CustomEvent("select", { detail: {
+    this.trigger("select", {
       buffer,
       startOffset: this.selectionStartOffset,
       endOffset: this.selectionEndOffset,
       length: this.selectionEndOffset - this.selectionStartOffset,
-    } }));
+    });
   }
 
   normalizeInput(text, inputType, offset) {
     const { buffer, mode } = this;
-    const activeWindow = this.views[inputType].window;
+    const activeWindow = this.availableViews[inputType].window;
     const { charsPerByte } = activeWindow;
     let caret = offset;
     if (!text) return [undefined, caret];
@@ -263,19 +247,20 @@ export class HexEditor extends Panel {
   }
 
   onBeforeInput(e) {
+    if (e.target.tagName.toLowerCase() !== "hv-window") return;
     e.preventDefault();
     const { baseOffset, extentOffset, baseNode: $node, extentNode } = document.getSelection();
     if ($node !== extentNode) return;
 
-    const activeWindow = Object.values(this.views).find(({active, window}) => active && window.$textNode === $node).window;
+    const activeWindow = Object.values(this.availableViews).find(({active, window}) => active && window.$textNode === $node).window;
     let [startOffset, endOffset] = normalizeSelectionRange(baseOffset, extentOffset, activeWindow.charsPerByte);
 
     switch (e.inputType) {
       case "insertFromDrop":
       case "insertFromPaste":
       case "insertText": {
-        const data = activeWindow === this.views.ascii.window ? e.data : e.data?.replace(/\s+/gm, "");
-        const [chunk, caretOffset] = this.normalizeInput(data, activeWindow === this.views.hex.window ? "hex" : activeWindow === this.views.bin.window ? "bin" : "ascii", Math.min(baseOffset, extentOffset));
+        const data = activeWindow === this.availableViews.ascii.window ? e.data : e.data?.replace(/\s+/gm, "");
+        const [chunk, caretOffset] = this.normalizeInput(data, activeWindow === this.availableViews.hex.window ? "hex" : activeWindow === this.availableViews.bin.window ? "bin" : "ascii", Math.min(baseOffset, extentOffset));
         if (!chunk) return;
 
         if (this.mode === "insert") {
@@ -324,8 +309,11 @@ export class HexEditor extends Panel {
   }
 
   onSelectionChange(e) {
+    e.stopImmediatePropagation();
+    if (e.target.tagName.toLowerCase() !== "hv-window") return;
+
     const { focusNode, startOffset, endOffset } = e.detail;
-    const activeWindow = focusNode === this.views.hex.window?.$textNode ? this.views.hex.window : focusNode === this.views.bin.window?.$textNode ? this.views.bin.window : this.views.ascii.window;
+    const activeWindow = focusNode === this.availableViews.hex.window?.$textNode ? this.availableViews.hex.window : focusNode === this.availableViews.bin.window?.$textNode ? this.availableViews.bin.window : this.availableViews.ascii.window;
     const [start, end] = normalizeSelectionRange(startOffset, endOffset, activeWindow.charsPerByte);
 
     this.updateSelection(start, end);
@@ -347,9 +335,9 @@ export class HexEditor extends Panel {
         .padStart(6, 0))
       .join("\n");
 
-      this.dispatchEvent(new CustomEvent("load", { detail: { buffer: buffer.getBuffer() } }));
+      this.trigger("load", { buffer: buffer.getBuffer() });
 
-      Object.values(this.views).filter(({ active }) => active).forEach(({ window }) => window.render());
+      Object.values(this.availableViews).filter(({ active }) => active).forEach(({ window }) => window.render());
       this.setSelection(0);
   }
 
@@ -364,7 +352,7 @@ export class HexEditor extends Panel {
       .from(new Set(arr.map(({ name }) => name)))
       .reduce((obj, name) => ({ ...obj, [name]: [] }), {});
     arr.forEach(({ name, start, end }) => {
-      groups[name].push(range(this.views.ascii.window.$textNode, start, end));
+      groups[name].push(range(this.availableViews.ascii.window.$textNode, start, end));
     });
     Object.entries(groups).forEach(([name, ranges]) => {
       highlight(name, ranges);

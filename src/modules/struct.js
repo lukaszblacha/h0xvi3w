@@ -1,13 +1,25 @@
-import { $, bindAll, unbindAll } from "../dom.js";
-import { Panel } from "../components/panel.js";
+import { $, CustomElement } from "../dom.js";
+import { createPanel } from "../components/panel.js";
 import { packer } from "../utils/packer.js";
 import { DataBuffer } from "../structures/buffer.js";
 import { StructTemplate } from "./struct-template.js";
 import { HVStorage } from "../utils/storage.js";
 
-export class Struct extends Panel {
+export class Struct extends CustomElement {
   constructor(editor) {
-    super({ label: "Structures", disposable: true }, {
+    super({});
+
+    this.editor = editor;
+    this.storage = new HVStorage("hexview/structs", {});
+
+    this.onFieldClick = this.onFieldClick.bind(this);
+    this.onTemplatesChage = this.onTemplatesChage.bind(this);
+    this.openTemplateDialog = this.openTemplateDialog.bind(this);
+    this.parse = this.parse.bind(this);
+
+    createPanel(
+      this,
+      { label: "Structures", disposable: true }, {
       body: [
         $("div", { class: "panel-toolbar" }, [
           $("label", {}, [
@@ -27,36 +39,17 @@ export class Struct extends Panel {
       ],
     });
 
-    this.onInputChange = this.onInputChange.bind(this);
-    this.onFieldClick = this.onFieldClick.bind(this);
-    this.onTemplatesChage = this.onTemplatesChage.bind(this);
-    this.openTemplateDialog = this.openTemplateDialog.bind(this);
-    this.parse = this.parse.bind(this);
-
-    this.editor = editor;
-    this.storage = new HVStorage("hexview/structs", {});
+    this._events = [
+      [this.querySelector(`button[name="edit"]`), { click: this.openTemplateDialog }],
+      [this.querySelector(`button[name="parse"]`), { click: this.parse }],
+      [this.querySelector(".panel-body"), { click: this.onFieldClick }],
+      [this.storage, { change: this.onTemplatesChage }],
+    ];
   }
 
   connectedCallback() {
     super.connectedCallback();
-
-    Array.from(this.querySelectorAll("input"))
-      .forEach(e => bindAll(e, { change: this.onInputChange }));
-    bindAll(this.querySelector(`button[name="edit"]`), { click: this.openTemplateDialog });
-    bindAll(this.querySelector(`button[name="parse"]`), { click: this.parse });
-    bindAll(this.querySelector(".panel-body"), { click: this.onFieldClick });
-    bindAll(this.storage, { change: this.onTemplatesChage });
-
     this.renderOptions(Object.keys(this.storage.load()));
-  }
-
-  disconnectedCallback() {
-    Array.from(this.querySelectorAll("input"))
-      .forEach(e => unbindAll(e, { change: this.onInputChange }));
-    unbindAll(this.querySelector(`button[name="edit"]`), { click: this.openTemplateDialog });
-    unbindAll(this.querySelector(`button[name="parse"]`), { click: this.parse });
-    unbindAll(this.querySelector(".panel-body"), { click: this.onFieldClick });
-    unbindAll(this.storage, { change: this.onTemplatesChage });
   }
 
   get offset() {
@@ -65,11 +58,6 @@ export class Struct extends Panel {
 
   get templateName() {
     return this.querySelector("select").value;
-  }
-
-  onInputChange() {
-    // const p = packer(this.format);
-    // console.log(p);
   }
 
   onFieldClick({ target }) {

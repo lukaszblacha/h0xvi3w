@@ -79,17 +79,16 @@ export class Layout extends HTMLElement {
   constructor(editor) {
     super();
     this.initialized = false;
+    this.editor = editor;
+    this.classList.add("layout");
+    this.appendChild($("div"));
 
     this.getLayoutElement = this.getLayoutElement.bind(this);
-
-    this.editor = editor;
   }
 
   connectedCallback() {
     if (!this.initialized) {
       this.initialized = true;
-      this.classList.add("layout");
-      this.appendChild($("div"));
       this.set(defaultLayout);
     }
   }

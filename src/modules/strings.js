@@ -1,78 +1,74 @@
-import { $, bindAll, unbindAll, debounce, parseAttribute } from "../dom.js";
-import { Panel } from "../components/panel.js";
+import { $, debounce, CustomElement } from "../dom.js";
+import { createPanel } from "../components/panel.js";
 
-const defaults = {
-  "min-length": "6",
-  "case-sensitive": "false"
+const attributes = {
+  "min-length": { type: "number", defaultValue: 6 },
+  "case-sensitive": { type: "bool", defaultValue: "false" },
 }
 
-export class Strings extends Panel {
-  static observedAttributes = ["min-length", "case-sensitive"];
+export class Strings extends CustomElement {
+  static observedAttributes = Object.keys(attributes);
 
   constructor(editor) {
-    super({ label: "Strings", disposable: true }, {
-      header:
-        $("div", { class: "panel-toolbar" }, [
-          $("label", { class: "spacer" }, [
-            $("span", {}, ["Search"]),
-            $("input", { type: "search", name: "term" }),
-          ]),
-          $("label", {}, [
-            $("span", {}, ["Minimum length"]),
-            $("input", { type: "number", name: "min-length", min: 3, max: 15, step: 1, value: 6 }),
-          ]),
-          $("input", { type: "checkbox", name: "case-sensitive", title: "Match case", label: "Aa" })
-        ]),
-      body: $("div", { class: "list" })
-    });
+    super(attributes);
+
+    this.strArray = [];
+    this.editor = editor;
 
     this.onBufferChange = debounce(this.onBufferChange.bind(this), 200);
     this.onSearchTermChange = this.onSearchTermChange.bind(this);
     this.onStringClick = this.onStringClick.bind(this);
     this.handleInputChange = this.handleInputChange.bind(this);
 
-    this.strArray = [];
-    this.editor = editor;
+    createPanel(
+      this,
+      { label: "Strings", disposable: true }, {
+        header:
+          $("div", { class: "panel-toolbar" }, [
+            $("label", { class: "spacer" }, [
+              $("span", {}, ["Search"]),
+              $("input", { type: "search", name: "term" }),
+            ]),
+            $("label", {}, [
+              $("span", {}, ["Minimum length"]),
+              $("input", { type: "number", name: "min-length", min: 3, max: 15, step: 1, value: 6 }),
+            ]),
+            $("input", { type: "checkbox", name: "case-sensitive", title: "Match case", label: "Aa" })
+          ]),
+        body: $("div", { class: "list" })
+      }
+    )
 
     this.$body = this.querySelector(".list");
-    this.$search = this.querySelector("input[type=search]");
+    this.$search = this.querySelector(`input[name="term"]`);
+    this.$minLength = this.querySelector(`input[name="min-length"]`);
+    this.$caseSensitive = this.querySelector(`input[name="case-sensitive"]`);
+
+    this._events = [
+      [this.$body, { click: this.onStringClick }],
+      [this.$search, { change: this.onSearchTermChange }],
+      [this.$minLength, { change: this.handleInputChange }],
+      [this.$caseSensitive, { change: this.handleInputChange }],
+      [this.editor.buffer, { change: this.onBufferChange }],
+    ];
   }
 
   connectedCallback() {
     super.connectedCallback();
-
-    const [, minLengthInput, caseSensitiveInput] = this.querySelectorAll("input");
-    minLengthInput.value = this.minLength;
-    caseSensitiveInput.checked = this.caseSensitive;
-
-    bindAll(this.$body, { click: this.onStringClick });
-    bindAll(this.$search, { change: this.onSearchTermChange });
-    bindAll(minLengthInput, { change: this.handleInputChange });
-    bindAll(caseSensitiveInput, { change: this.handleInputChange });
-    bindAll(this.editor.buffer, { change: this.onBufferChange });
-
+    this.$minLength.value = this.minLength;
+    this.$caseSensitive.checked = this.caseSensitive;
     this.onBufferChange();
   }
 
-  disconnectedCallback() {
-    const [, minLengthInput, caseSensitiveInput] = this.querySelectorAll("input");
-    unbindAll(this.$body, { click: this.onStringClick });
-    unbindAll(this.$search, { change: this.onSearchTermChange });
-    unbindAll(minLengthInput, { change: this.handleInputChange });
-    unbindAll(caseSensitiveInput, { change: this.handleInputChange });
-    unbindAll(this.editor.buffer, { change: this.onBufferChange });
-  }
-
   attributeChangedCallback(name, oldValue, newValue) {
-    if (!this.isConnected) return;
+    if ([undefined, null].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
+
     switch (name) {
       case "min-length": {
-        if (!newValue) return this.setAttribute(name, defaults[name]);
         this.querySelector(`input[name="${name}"]`).value = newValue;
         break;
       }
       case "case-sensitive": {
-        if (!newValue) return this.setAttribute(name, defaults[name]);
         this.querySelector(`input[name="${name}"]`).checked = newValue === "true";
         break;
       }
@@ -81,25 +77,17 @@ export class Strings extends Panel {
     this.render(this.$search.value);
   }
 
-  get minLength() {
-    return Number(parseAttribute(this, "min-length", defaults["min-length"]));
-  }
-
-  get caseSensitive() {
-    return parseAttribute(this, "case-sensitive", defaults["case-sensitive"]) === "true";
-  }
-
   handleInputChange(e) {
     const { name, checked, type, value } = e.target;
     this.setAttribute(name, type.toLowerCase() === "checkbox" ? String(checked) : value);
   }
 
   render(filter = "") {
-    Array.from(this.$body.children).forEach((item) => item.remove());
     const fc = this.caseSensitive
       ? (str) => str.includes(filter)
       : (str) => str.toLowerCase().includes(filter.toLowerCase());
 
+    this.$body.innerText = "";
     this.strArray.forEach(([str, offset]) => {
       if (str.length >= this.minLength && (!filter || fc(str))) {
         this.$body.appendChild($(

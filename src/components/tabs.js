@@ -1,55 +1,51 @@
-import { $, bindAll, unbindAll } from "../dom.js";
+import { $, bindAll, CustomElement, unbindAll } from "../dom.js";
 import { Split } from "./split.js";
 
-export class Tabs extends HTMLElement {
-  static observedAttributes = ["tabs-position"];
+const fields = {
+  "tabs-position": { type: "string", defaultValue: "top" }
+};
+
+export class Tabs extends CustomElement {
+  static observedAttributes = Object.keys(fields);
 
   constructor(content) {
-    super();
-    this.initialContent = content;
+    super(fields);
     this.activeTabIndex = 0;
     this.initialized = false;
+    this.classList.add("tabs");
 
-    this.onListItemClick = this.onListItemClick.bind(this);
     this.onDragOver = this.onDragOver.bind(this);
-    this.onDragLeave = this.onDragLeave.bind(this);
-    this.onDrop = this.onDrop.bind(this);
-    this.onChildListChange = this.onChildListChange.bind(this);
-    this.onTabDragStart = this.onTabDragStart.bind(this);
-    this.setActiveTabIndex = this.setActiveTabIndex.bind(this);
+
+    this.$list = $("ul", { class: "tabs-list" });
+    this.$container = $("div", { class: "tabs-container" }, content);
+    this.appendChild(this.$list);
+    this.appendChild(this.$container);
+
+    this._events = [
+      [this.$list, {
+        click: this.onListItemClick.bind(this),
+        dragstart: this.onTabDragStart.bind(this)
+      }],
+      [this.$container, {
+        dragenter: this.onDragEnter.bind(this),
+        dragleave: this.onDragLeave.bind(this),
+        drop: this.onDrop.bind(this)
+      }]
+    ];
   }
 
   connectedCallback() {
-    if (!this.initialized) {
-      this.initialized = true;
-      this.classList.add("tabs");
-      this.$list = $("ul", { class: "tabs-list" });
-      this.$container = $("div", { class: "tabs-container" }, this.initialContent);
-      delete this.initialContent;
-      this.appendChild(this.$list);
-      this.appendChild(this.$container);
-    }
-
-    bindAll(this.$list, { click: this.onListItemClick });
-    bindAll(this.$container, {
-      dragover: this.onDragOver,
-      dragleave: this.onDragLeave,
-      drop: this.onDrop
-    });
-    this.observer = new MutationObserver(this.onChildListChange);
+    super.connectedCallback();
+    this.observer = new MutationObserver(this.onChildListChange.bind(this));
     this.observer.observe(this.$container, { childList: true });
     this.onChildListChange();
   }
 
   disconnectedCallback() {
+    unbindAll(this.$container, { dragover: this.onDragOver }, false);
     this.observer.disconnect();
     this.observer = null;
-    unbindAll(this.$list, { click: this.onListItemClick });
-    unbindAll(this.$container, {
-      dragover: this.onDragOver,
-      dragleave: this.onDragLeave,
-      drop: this.onDrop
-    });
+    super.disconnectedCallback();
   }
 
   setActiveTabIndex(index) {
@@ -73,6 +69,8 @@ export class Tabs extends HTMLElement {
   }
 
   onTabDragStart(e) {
+    // eslint-disable-next-line no-prototype-builtins
+    if (!e.target.dataset?.hasOwnProperty('index')) return;
     const index = parseInt(e.target.dataset.index);
     e.dataTransfer.dropEffect = "move";
     e.dataTransfer.effectAllowed = "move";
@@ -99,18 +97,13 @@ export class Tabs extends HTMLElement {
       disposable: $el.hasAttribute("disposable"),
     }));
 
-    Array.from(this.$list.children).forEach($el => {
-      $el.removeEventListener("dragstart", this.onTabDragStart);
-      this.$list.removeChild($el);
-    });
-
+    this.$list.innerText = "";
     labels.map(({ label, disposable }, index) => {
       const $el = $(
         "li",
         { draggable: true, "data-index": index, class: index === this.activeTabIndex ? "active" : undefined },
         [label, disposable && $("span", { title: `Close "${label}" window`, class: "close" }, "✕")].filter(Boolean)
       );
-      $el.addEventListener("dragstart", this.onTabDragStart);
       this.$list.appendChild($el);
     });
 
@@ -125,12 +118,15 @@ export class Tabs extends HTMLElement {
     }
   }
 
-  onDragOver(e) {
-    const { layerX, layerY } = e;
-    if (e.target.parentNode !== e.currentTarget) {
-      e.preventDefault();
-    }
+  onDragEnter(e) {
+    if (e.currentTarget !== this.$container) return;
+    bindAll(this.$container, { dragover: this.onDragOver }, false);
+  }
 
+  onDragOver(e) {
+    if (e.currentTarget !== this.$container) return;
+    e.preventDefault();
+    const { layerX, layerY } = e;
     const { width, height } = this.$container.getBoundingClientRect();
     const [px, py] = [
       1 - (width - layerX) / width,
@@ -148,18 +144,21 @@ export class Tabs extends HTMLElement {
       className = "drop-bottom";
     }
 
-    if(!this.$container.classList.contains(className)) {
+    if (!this.$container.classList.contains(className)) {
       this.$container.classList.add(className);
       const classes = Array.from(this.$container.classList).filter(c => c.startsWith("drop-") && c !== className);
       if (classes.length) this.$container.classList.remove(classes);
     }
   }
 
-  onDragLeave() {
+  onDragLeave(e) {
+    if (e.currentTarget !== this.$container) return;
+    unbindAll(e.currentTarget, { dragOver: this.onDragOver }, false);
     this.$container.classList.remove("drop-top", "drop-left", "drop-right", "drop-bottom", "drop-center");
   }
 
-  onDrop() {
+  onDrop(e) {
+    if (e.currentTarget !== this.$container) return;
     const $source = document.querySelector("[dnd-source]");
     const className = Array.from(this.$container.classList).filter(c => c.startsWith("drop-"))[0];
     this.$container.classList.remove(className);
