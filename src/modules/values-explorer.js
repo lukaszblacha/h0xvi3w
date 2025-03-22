@@ -3,7 +3,7 @@ import { createPanel } from "../components/panel.js";
 import { readInt } from "../structures/buffer.js";
 
 function formatBinValue(value) {
-  return value[0]?.toString(2).padStart(8, "0") ?? "◌";
+  return value[0]?.toString(2).padStart(8, "0");
 }
 
 function updateEndiannessLabel($node, bigEndian) {
@@ -13,13 +13,34 @@ function updateEndiannessLabel($node, bigEndian) {
 function formatInt(value, bits, signed, bigEndian) {
   try {
     return readInt(value, bits, signed, bigEndian);
-  } catch {
-    return "◌";
-  }
+  } catch {}
+}
+
+function formatIPv4(value) {
+  if (value.length < 4) return;
+  try {
+    return value.slice(0, 4).map(c => String(c)).join(".");
+  } catch {}
+}
+
+function formatIPv6(value) {
+  if (value.length < 16) return;
+  try {
+    return new Array(8).fill(0)
+    .map((_, index) => readInt(
+      value.subarray(index * 2, (index+1) * 2),
+      16,
+      false,
+      true
+    ))
+    .map(c => c.toString(16))
+    .join(":")
+    .replace(/:(0+(:|$))+/, "::");
+  } catch {}
 }
 
 function formatChar(value) {
-  if (value.length < 1) return "◌";
+  if (value.length < 1) return;
   const char = String.fromCharCode(value[0]).charAt(0);
   const hex = value[0].toString(16).toUpperCase().padStart(2,0);
   return `"${char}" ${hex}h`;
@@ -90,10 +111,14 @@ export class ValuesExplorer extends CustomElement {
       ["u32", formatInt(value, 32, false, bigEndian)],
       ["i64", formatInt(value, 64, true, bigEndian)],
       ["u64", formatInt(value, 64, false, bigEndian)],
+      ["ipv4", formatIPv4(value)],
+      ["ipv6", formatIPv6(value)],
       ].map(
         ([name, value]) => $("tr", {}, [
           $("td", {}, [name]),
-          $("td",{ class: "right" }, [String(value)])
+          $("td",{ class: "right" }, [
+            value === undefined ? '◌' : String(value)
+          ])
         ])
       )
     );
@@ -109,7 +134,10 @@ export class ValuesExplorer extends CustomElement {
   setValue(e) {
     const { startOffset } = e.detail;
     cancelAnimationFrame(this.afRid);
-    this.value = this.editor.buffer.subarray(startOffset, startOffset + 8);
+    this.value = this.editor.buffer.subarray(
+      startOffset,
+      Math.min(startOffset + 16, this.editor.buffer.length)
+    );
     this.afRid = requestAnimationFrame(this.render);
   }
 }

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "python3 -m http.server 8080 -d src",
     "lint": "eslint ./src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
