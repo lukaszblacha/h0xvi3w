@@ -6,13 +6,16 @@ hv-menu {
   gap: 4px;
   padding: 2px 8px;
   list-style: none;
+  font-size: 13px;
 
   .item, .submenu {
     border: solid 1px transparent;
   }
 
   .submenu {
-    display: none;
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
     flex-direction: column;
     gap: 1px;
     position: absolute;
@@ -38,7 +41,8 @@ hv-menu {
     white-space: nowrap;
 
     &:focus .submenu, .submenu:hover {
-      display: flex;
+      opacity: 1;
+      pointer-events: unset;
       z-index: 1;
     }
   }
@@ -68,5 +72,12 @@ hv-menu {
     background-color: var(--color-input-container-bg);
     border-color: var(--color-input-container-bg);
     box-shadow: 0 1px 5px #10111280;
+    transform: translateY(20px);
+    transition: transform 50ms linear, opacity 50ms linear;
   }
+
+  .item:focus .submenu, .submenu:hover {
+    transform: translateY(0);
+  }
+
 }

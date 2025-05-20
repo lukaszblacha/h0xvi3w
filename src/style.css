@@ -38,7 +38,7 @@ body {
 
 *, *:before, *:after {
   box-sizing: border-box;
-  font-family: monospace !important;
+  font-family: "JetBrains Mono", monospace !important;
 }
 
 input, button, select {
@@ -125,6 +125,7 @@ label {
     color: #aaa;
     font-size: 9px;
     text-transform: lowercase;
+    text-shadow: 0 1px 1px #000;
   }
 }
 
