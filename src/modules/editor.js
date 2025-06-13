@@ -71,7 +71,7 @@ export class HexEditor extends CustomElement {
 
     createPanel(
       this,
-      { label: "Editor" }, {
+      { label: "Editor", disposable: false }, {
         header: [
           $("div", { class: "col-index" }, "offset"),
           $("div", { class: "col-bin hidden" }, headerText(lineWidth, 8)),

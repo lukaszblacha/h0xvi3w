@@ -1,69 +1,12 @@
-import { Split } from "./components/split.js";
-import { Tabs } from "./components/tabs.js";
-import { Strings } from "./modules/strings.js";
-import { ValuesExplorer } from "./modules/values-explorer.js";
-import { Canvas } from "./modules/canvas.js";
-import { Struct } from "./modules/struct.js";
-import { HexEditor } from "./modules/editor.js";
-import { $ } from "./dom.js";
-
-const defaultLayout = {
-  "type": "hv-split",
-  "orientation": "vertical",
-  "items": [
-    {
-      "type": "hv-split",
-      "orientation": "horizontal",
-      "items": [
-        {
-          "type": "hv-tabs",
-          "tabs-position": "top",
-          "items": [
-            {
-              "type": "hv-editor",
-              "views": "hex,ascii",
-              "mode": "overwrite"
-            }
-          ]
-        },
-        {
-          "type": "hv-split",
-          "orientation": "vertical",
-          "items": [
-            {
-              "type": "hv-tabs",
-              "tabs-position": "top",
-              "items": [
-                {
-                  "type": "hv-values-explorer",
-                  "big-endian": "false"
-                }
-              ]
-            },
-            {
-              "type": "hv-tabs",
-              "tabs-position": "top",
-              "items": [
-                { "type": "hv-canvas" }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "hv-tabs",
-      "tabs-position": "bottom",
-      "items": [
-        {
-          "type": "hv-strings",
-          "min-length": "6",
-          "case-sensitive": "false"
-        }
-      ]
-    }
-  ]
-};
+import { isKnob, Split } from "../components/split.js";
+import { Tabs } from "../components/tabs.js";
+import { Strings } from "../modules/strings.js";
+import { ValuesExplorer } from "../modules/values-explorer.js";
+import { Canvas } from "../modules/canvas.js";
+import { Struct } from "../modules/struct.js";
+import { HexEditor } from "../modules/editor.js";
+import { defaultLayout } from "./config.js";
+import { $ } from "../dom.js";
 
 const componentMap = {
   "hv-tabs": Tabs,
@@ -169,6 +112,22 @@ export class Layout extends HTMLElement {
 
   set(layout = defaultLayout) {
     this.firstChild.replaceWith(this.createLayoutElement(layout));
+
+    // lock split children size as percentage
+    setTimeout(() => {
+      this.querySelectorAll("hv-split").forEach(($split) => {
+        const splitSize = $split.getSize();
+        [...$split.children]
+          .filter((el) => !isKnob(el))
+          .map((el) => {
+            const rect = el.getBoundingClientRect();
+            return [el, $split.orientation === "horizontal" ? rect.width : rect.height];
+          })
+          .forEach(([c, size]) => {
+            c.style.flex = `1 1 ${size / splitSize * 100}%`;
+          });
+      });
+    });
   }
 
   get() {

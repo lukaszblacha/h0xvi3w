@@ -12,7 +12,7 @@ export const $ = (tag, attributes = {}, content = []) => {
       const $child = typeof child === "string" ? document.createTextNode(child) : child;
       try {
         $el.appendChild($child)
-      } catch(e) {
+      } catch (e) {
         console.error(e);
       }
     });
@@ -33,6 +33,10 @@ export const bindAll = ($node, events = {}, passive = true) => {
       $node.addEventListener(name, handler, { passive });
     })
   });
+
+  return () => {
+    unbindAll($node, events, passive)
+  };
 }
 
 export const unbindAll = ($node, events = {}, passive = true) => {
