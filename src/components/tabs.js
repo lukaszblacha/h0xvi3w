@@ -52,14 +52,14 @@ export class Tabs extends CustomElement {
     if (index >= 0) {
       this.activeTabIndex = index;
       Array.from(this.$list.children).map(($el, i) => {
-        if(i === index) {
+        if (i === index) {
           $el.classList.add("active");
         } else {
           $el.classList.remove("active");
         }
       });
       Array.from(this.$container.children).map(($el, i) => {
-        if(i === index) {
+        if (i === index) {
           $el.classList.add("active-tab");
         } else {
           $el.classList.remove("active-tab");
@@ -74,8 +74,8 @@ export class Tabs extends CustomElement {
     const index = parseInt(e.target.dataset.index);
     e.dataTransfer.dropEffect = "move";
     e.dataTransfer.effectAllowed = "move";
-    Array.from(document.querySelectorAll("[dnd-source]")).forEach(n => n.removeAttribute("dnd-source"));
-    this.$container.children[index].setAttribute("dnd-source", true);
+    Array.from(document.querySelectorAll("[dnd-source-tab]")).forEach(n => n.removeAttribute("dnd-source-tab"));
+    this.$container.children[index].setAttribute("dnd-source-tab", true);
   }
 
   onChildListChange() {
@@ -94,7 +94,7 @@ export class Tabs extends CustomElement {
 
     const labels = $children.map(($el, i) => ({
       label: $el.getAttribute("label") || `Tab ${i}`,
-      disposable: $el.hasAttribute("disposable"),
+      disposable: $el.hasAttribute("disposable") && $el.getAttribute("disposable") !== "false",
     }));
 
     this.$list.innerText = "";
@@ -119,12 +119,18 @@ export class Tabs extends CustomElement {
   }
 
   onDragEnter(e) {
-    if (e.currentTarget !== this.$container) return;
-    bindAll(this.$container, { dragover: this.onDragOver }, false);
+    const $source = document.querySelector("[dnd-source-tab]");
+    if ($source) {
+      bindAll(this.$container, { dragover: this.onDragOver }, false);
+    }
   }
 
   onDragOver(e) {
-    if (e.currentTarget !== this.$container) return;
+    const $source = document.querySelector("[dnd-source-tab]");
+    if (!$source) {
+      return;
+    }
+
     e.preventDefault();
     const { layerX, layerY } = e;
     const { width, height } = this.$container.getBoundingClientRect();
@@ -152,14 +158,17 @@ export class Tabs extends CustomElement {
   }
 
   onDragLeave(e) {
-    if (e.currentTarget !== this.$container) return;
     unbindAll(e.currentTarget, { dragOver: this.onDragOver }, false);
+
+    if (e.currentTarget !== this.$container) return;
     this.$container.classList.remove("drop-top", "drop-left", "drop-right", "drop-bottom", "drop-center");
   }
 
   onDrop(e) {
-    if (e.currentTarget !== this.$container) return;
-    const $source = document.querySelector("[dnd-source]");
+    unbindAll(this.$container, { dragover: this.onDragOver }, false);
+
+    const $source = document.querySelector("[dnd-source-tab]");
+    $source.removeAttribute("dnd-source-tab");
     const className = Array.from(this.$container.classList).filter(c => c.startsWith("drop-"))[0];
     this.$container.classList.remove(className);
 
@@ -167,13 +176,17 @@ export class Tabs extends CustomElement {
       this.$container.appendChild($source);
       this.setActiveTabIndex(this.$container.children.length - 1);
     } else {
-      const split = new Split();
-      this.parentNode.insertBefore(split, this);
+      const $split = new Split();
+      const $parent = this.parentNode;
+      const $placeholder = $("div"); // to keep DOM mutation event handlers happy
+      $parent.replaceChild($placeholder, this);
       const splitContent = (["drop-top", "drop-left"].includes(className))
         ? [new Tabs($source), this]
         : [this, new Tabs($source)];
-      splitContent.forEach(el => split.appendChild(el));
-      split.setAttribute("orientation", ["drop-left", "drop-right"].includes(className) ? "horizontal" : "vertical");
+      splitContent.forEach(el => $split.appendChild(el));
+      $split.setAttribute("orientation", ["drop-left", "drop-right"].includes(className) ? "horizontal" : "vertical");
+      $parent.replaceChild($split, $placeholder);
+      $parent.updateChildSize($split);
     }
   }
 }

@@ -2,7 +2,7 @@ import { $, bindAll } from "./dom.js";
 import { HexEditor } from "./modules/editor.js";
 import { MainMenu } from "./components/menu.js";
 import { DataBuffer } from "./structures/buffer.js";
-import { Layout } from "./layout.js";
+import { Layout } from "./layout/layout.js";
 
 const editor = new HexEditor(16);
 const layout = new Layout(editor);
@@ -46,25 +46,31 @@ document.body.appendChild($("div", { id: "popover" }));
 
 menu.setItems({
   items: [
-    { label: "File", items: [
+    {
+      label: "File", items: [
         { label: "New", action: createFile },
         { label: "Open", $element: $file },
         { label: "Save", action: saveFile },
-      ]},
+      ]
+    },
     // { label: "Edit", action: () => alert("notimpl") },
-    { label: "View", items: [
+    {
+      label: "View", items: [
         { label: "Binary", action: () => editor.toggleView("bin") },
         { label: "Hexadecimal", action: () => editor.toggleView("hex") },
         { label: "ASCII", action: () => editor.toggleView("ascii") },
-      ] },
-    { label: "Window", items: [
+      ]
+    },
+    {
+      label: "Window", items: [
         { label: "Values explorer", action: () => layout.toggleWindow("hv-values-explorer") },
         { label: "Strings", action: () => layout.toggleWindow("hv-strings") },
         { label: "Canvas", action: () => layout.toggleWindow("hv-canvas") },
         { label: "Structures", action: () => layout.toggleWindow("hv-struct") },
         { type: "spacer" },
         { label: "Save layout", action: () => layout.save() },
-      ] },
+      ]
+    },
   ]
 });
 
