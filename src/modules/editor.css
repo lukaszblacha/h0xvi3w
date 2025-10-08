@@ -4,8 +4,9 @@ hv-split:has(hv-editor), hv-tabs:has(hv-editor) {
 
 hv-editor.panel {
   .panel-header, .panel-body {
+    display: grid;
+    justify-content: unset;
     gap: 20px;
-    justify-content: flex-start;
 
     .hidden {
       display: none;
@@ -20,8 +21,6 @@ hv-editor.panel {
   }
 
   .panel-body {
-    flex-direction: row;
-
     *::selection {
       background-color: #F005;
     }
