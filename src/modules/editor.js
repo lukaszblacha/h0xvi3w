@@ -118,6 +118,7 @@ export class HexEditor extends CustomElement {
     switch (name) {
       case "views": {
         const enabledViews = parseViewsAttribute(newValue);
+        this.updateGridTemplate(enabledViews);
         Object.keys(this.availableViews).forEach((view) => {
           if (enabledViews.includes(view)) this.enableView(view);
           else this.disableView(view);
@@ -132,6 +133,15 @@ export class HexEditor extends CustomElement {
     }
   }
 
+  updateGridTemplate(views) {
+    let tpl = "55px";
+    if (views.includes("bin")) tpl += " 128ch";
+    if (views.includes("hex")) tpl += " 32ch";
+    if (views.includes("ascii")) tpl += " 16ch";
+    this.querySelector(".panel-header").style.gridTemplateColumns = tpl;
+    this.querySelector(".panel-body").style.gridTemplateColumns = tpl;
+  }
+
   enableView(name) {
     if (!(name in this.availableViews) || this.availableViews[name].active) return;
     const cfg = this.availableViews[name];
@@ -140,7 +150,6 @@ export class HexEditor extends CustomElement {
     this.querySelector(`.panel-header .col-${name}`).classList.remove("hidden");
     this.querySelector(`.panel-body .col-${name}`).replaceWith(cfg.window);
     cfg.active = true;
-    // this.bindViewEventHandlers(cfg.window);
     cfg.window.render();
     this.updateSelection(this.selectionStartOffset, this.selectionEndOffset);
     highlight("selection", Object.values(this.availableViews).map(({ window }) => window?.selectionRange).filter(Boolean));
@@ -150,7 +159,6 @@ export class HexEditor extends CustomElement {
     if (!(name in this.availableViews) || !this.availableViews[name].active) return;
     const cfg = this.availableViews[name];
 
-    // this.unbindViewEventHandlers(cfg.window);
     this.querySelector(`.panel-header .col-${name}`).classList.add("hidden");
     this.querySelector(`.panel-body .col-${name}`).replaceWith($("div", { class: `col-${name} hidden` }));
     cfg.active = false;

@@ -36,19 +36,19 @@ hv-split[orientation="vertical"] > .hv-knob {
 }
 
 hv-tabs {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: 22px 1fr;
     overflow: hidden;
-    flex: 1 0 25%;
 
     &[tabs-position="bottom"] {
+        grid-template-rows: 1fr 22px;
         & > *:nth-child(1) {
             order: 1;
         }
 
         ul.tabs-list {
           padding: 0 5px 2px;
-        
+
           & > li {
             border-radius: 0 0 2px 2px;
           }
@@ -63,7 +63,6 @@ hv-tabs {
         font-size: 12px;
         overflow-x: auto;
         white-space: nowrap;
-        flex: 0 0 auto;
 
         & > li {
             display: flex;
@@ -101,14 +100,12 @@ hv-tabs {
     }
 
     .tabs-container {
-        flex: 1 0 auto;
-        display: flex;
         overflow: hidden;
         position: relative;
+        height: 100%;
 
         & > .active-tab {
-            min-width: 100%;
-            min-height: 100%;
+            height: 100%;
         }
 
         & > *:not(.active-tab) {
