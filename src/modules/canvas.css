@@ -19,7 +19,7 @@ hv-canvas.panel {
   }
 
   canvas {
-    transform-origin: 0 0;
+    image-rendering: pixelated;
   }
 
   .panel-header {

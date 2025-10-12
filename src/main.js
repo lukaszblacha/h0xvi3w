@@ -8,8 +8,7 @@ const editor = new HexEditor(16);
 const layout = new Layout(editor);
 
 function createFile() {
-  const buffer = new DataBuffer(new Uint8Array(Array(16).fill(0)));
-  editor.openFile(buffer);
+  editor.openFile(new DataBuffer(16));
 }
 
 function openFile(e) {
@@ -18,7 +17,7 @@ function openFile(e) {
 
   const fileReader = new FileReader();
   fileReader.onload = ({ target }) => {
-    const buffer = new DataBuffer(new Uint8Array(target.result));
+    const buffer = new DataBuffer(target.result);
     editor.openFile(buffer, file.name);
   }
   fileReader.readAsArrayBuffer(file);
@@ -53,7 +52,6 @@ menu.setItems({
         { label: "Save", action: saveFile },
       ]
     },
-    // { label: "Edit", action: () => alert("notimpl") },
     {
       label: "View", items: [
         { label: "Binary", action: () => editor.toggleView("bin") },
