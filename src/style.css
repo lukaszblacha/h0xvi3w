@@ -126,6 +126,7 @@ label {
     font-size: 9px;
     text-transform: lowercase;
     text-shadow: 0 1px 1px #000;
+    pointer-events: none;
   }
 }
 

@@ -30,7 +30,6 @@ hv-editor.panel {
     }
 
     [contenteditable] {
-      flex: 0 0 auto;
       outline: none;
       caret-color: #FF0000;
       background-color: inherit;

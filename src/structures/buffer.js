@@ -43,7 +43,7 @@ export function writeInt(buffer, offset, bits, signed, bigEndian, _value) {
   }
 
   const chunk = new Uint8Array(numChars);
-  for (let i= 0; i<numChars; i++) {
+  for (let i = 0; i < numChars; i++) {
     chunk[i] = Number(value & 256n);
     value = value >> 8n;
   }
@@ -52,9 +52,12 @@ export function writeInt(buffer, offset, bits, signed, bigEndian, _value) {
   buffer.set(chunk, offset);
 }
 
+export const MAX_BUFFER_SIZE = 1024 * 1024 * 10;
+
 export class DataBuffer extends EventTarget {
-  constructor(data = new Uint8Array([]), startOffset = 0, endOffset = data.length) {
+  constructor(data = new Uint8Array(0), startOffset = 0, endOffset = data.length) {
     super();
+    this.buffer = new SharedArrayBuffer(0, { maxByteLength: MAX_BUFFER_SIZE });
     this.from(data, startOffset, endOffset);
   }
 
@@ -62,27 +65,41 @@ export class DataBuffer extends EventTarget {
     return this.endOffset - this.startOffset;
   }
 
-  from(data, startOffset = 0, endOffset = data.length) {
+  from(data, startOffset = 0, endOffset) {
     if (data instanceof DataBuffer) {
-      this.data = data.data;
+      this.grow(data.length);
+      new Uint8Array(this.buffer).set(new Uint8Array(data.buffer));
+    } else if (data instanceof ArrayBuffer) {
+      this.grow(data.byteLength);
+      new Uint8Array(this.buffer).set(new Uint8Array(data));
     } else if (typeof data === "number") {
-      this.data = new Uint8Array(data);
-    } else {
-      this.data = data;
+      this.grow(data);
     }
-    this.startOffset = Math.min(startOffset, this.data.length);
-    this.endOffset = Math.min(endOffset, this.data.length);
+    this.startOffset = Math.min(startOffset, this.buffer.byteLength);
+    this.endOffset = Math.min(Math.max(this.startOffset, endOffset ?? this.buffer.byteLength), this.buffer.byteLength);
     this.dispatchEvent(new CustomEvent("change", { detail: { startOffset: 0, endOffset: this.length, length: this.length } }));
 
     return this;
   }
 
   getBuffer() {
-    return this.data.subarray(this.startOffset, this.endOffset);
+    return new Uint8Array(this.buffer.slice(this.startOffset, this.endOffset));
   }
 
-  set(chunk, startOffset) {
-    this.data.set(chunk, startOffset);
+  grow(newSize) {
+    if (newSize > MAX_BUFFER_SIZE) {
+      throw new Error("Maximum buffer size exceeded");
+    }
+    if (newSize > this.buffer.byteLength) {
+      this.buffer.grow(newSize);
+    }
+  }
+
+  set(chunk, startOffset = 0) {
+    if (chunk.length > this.endOffset - startOffset) {
+      throw new Error("Trying to write outside of buffer boundary");
+    }
+    new Uint8Array(this.buffer).set(chunk, startOffset);
     const detail = { startOffset, endOffset: startOffset + chunk.length, length: chunk.length };
     this.dispatchEvent(new CustomEvent("overwrite", { detail }));
     this.dispatchEvent(new CustomEvent("change", { detail }));
@@ -91,21 +108,23 @@ export class DataBuffer extends EventTarget {
 
   insert(chunk, startOffset, endOffset = startOffset) {
     const toRemove = endOffset - startOffset;
-    if (this.endOffset + chunk.length - toRemove > this.data.length) {
-      const oldCapacity = this.data.length;
-      this.data = new Uint8Array([
-        ...this.data.subarray(0, this.startOffset + startOffset),
-        ...chunk,
-        ...this.data.subarray(this.startOffset + endOffset),
-        ...(new Array(1024).fill(0)) // margin to lower the frequency of constructing new buffer
-      ]);
-      this.dispatchEvent(new CustomEvent("resize", { detail: { oldCapacity, newCapacity: this.data.length } }));
-    } else {
-      this.data.copyWithin(this.startOffset + startOffset + chunk.length, this.startOffset + endOffset);
-      if(chunk.length) {
-        this.data.set(chunk, this.startOffset + startOffset);
-      }
+    const endOfWrite = startOffset + chunk.length - toRemove;
+    this.grow(endOfWrite);
+    if (endOfWrite > this.endOffset) {
+      this.endOffset = endOfWrite;
     }
+
+    const data = new Uint8Array(this.buffer);
+
+    // shift data left or right
+    if (chunk.length !== toRemove) {
+      data.copyWithin(this.startOffset + startOffset + chunk.length, this.startOffset + endOffset);
+    }
+
+    if (chunk.length) {
+      data.set(chunk, this.startOffset + startOffset);
+    }
+
     this.endOffset += chunk.length - toRemove;
 
     const detail = { startOffset, endOffset, length: chunk.length };
@@ -125,61 +144,66 @@ export class DataBuffer extends EventTarget {
   }
 
   subarray(start, end = this.endOffset) {
-    return this.data.subarray(this.startOffset + start, this.startOffset + end);
+    return new Uint8Array(this.buffer.slice(this.startOffset + start, this.startOffset + end));
   }
 
   slice(start, end = this.endOffset) {
-    return this.data.slice(this.startOffset + start, this.startOffset + end);
+    return new Uint8Array(this.buffer.slice(this.startOffset + start, this.startOffset + end));
   }
 
   at(i) {
-    return this.data[this.startOffset + i];
+    return new Uint8Array(
+      this.buffer.slice(
+        this.startOffset + i,
+        this.startOffset + i + 1
+      )
+    )[0];
   }
 
   readUInt8(offset) {
-    return readInt(this.subarray(offset), 8, false, false);
+    return readInt(this.slice(offset), 8, false, false);
   }
   readInt8(offset) {
-    return readInt(this.subarray(offset), 8, true, false);
+    return readInt(this.slice(offset), 8, true, false);
   }
   readUInt16LE(offset) {
-    return readInt(this.subarray(offset), 16, false, false);
+    return readInt(this.slice(offset), 16, false, false);
   }
   readInt16LE(offset) {
-    return readInt(this.subarray(offset), 16, true, false);
+    return readInt(this.slice(offset), 16, true, false);
   }
   readUInt16BE(offset) {
-    return readInt(this.subarray(offset), 16, false, true);
+    return readInt(this.slice(offset), 16, false, true);
   }
   readInt16BE(offset) {
-    return readInt(this.subarray(offset), 16, true, true);
+    return readInt(this.slice(offset), 16, true, true);
   }
   readUInt32LE(offset) {
-    return readInt(this.subarray(offset), 32, false, false);
+    return readInt(this.slice(offset), 32, false, false);
   }
   readInt32LE(offset) {
-    return readInt(this.subarray(offset), 32, true, false);
+    return readInt(this.slice(offset), 32, true, false);
   }
   readUInt32BE(offset) {
-    return readInt(this.subarray(offset), 32, false, true);
+    return readInt(this.slice(offset), 32, false, true);
   }
   readInt32BE(offset) {
-    return readInt(this.subarray(offset), 32, true, true);
+    return readInt(this.slice(offset), 32, true, true);
   }
   readUInt64LE(offset) {
-    return readInt(this.subarray(offset), 64, false, false);
+    return readInt(this.slice(offset), 64, false, false);
   }
   readInt64LE(offset) {
-    return readInt(this.subarray(offset), 64, true, false);
+    return readInt(this.slice(offset), 64, true, false);
   }
   readUInt64BE(offset) {
-    return readInt(this.subarray(offset), 64, false, true);
+    return readInt(this.slice(offset), 64, false, true);
   }
   readInt64BE(offset) {
-    return readInt(this.subarray(offset), 64, true, true);
+    return readInt(this.slice(offset), 64, true, true);
   }
   readString(start, end) {
-    return String.fromCharCode(...Array.from(this.subarray(start, end)));
+    return String.fromCharCode(...Array.from(this.slice(start, end)));
   }
   writeUInt8(offset, value) {
     return writeInt(this, offset, 8, false, false, value);
