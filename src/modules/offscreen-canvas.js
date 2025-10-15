@@ -33,21 +33,20 @@ function render({ buffer, offset, width, bpp, scanline, containerWidth }) {
     return;
   }
 
+  const start = Date.now();
   const scale = containerWidth / width;
   $canvas.width = containerWidth;
   $canvas.height = Math.ceil(buffer.byteLength / width) * scale;
 
   const ctx = $canvas.getContext("2d");
-  ctx.save();
-  ctx.clearRect(0, 0, $canvas.width, $canvas.height);
-  console.log({ scale });
   ctx.scale(scale, scale);
+  ctx.clearRect(0, 0, $canvas.width, $canvas.height);
 
   let y = 0;
   let o = offset;
   const data = new Uint8Array(buffer);
   while (o < data.byteLength) {
-    const line = toChunks(Array.from(data.subarray(o, o + width * bpp)), bpp)
+    const line = toChunks(data.subarray(o, o + width * bpp), bpp)
       .map(avg)
       .map(v => v.toString(16).padStart(2, "0"));
 
@@ -58,7 +57,7 @@ function render({ buffer, offset, width, bpp, scanline, containerWidth }) {
     y++;
     o += width * bpp + scanline;
   }
-  ctx.restore();
+  console.log(`Render took ${((Date.now() - start) / 1000).toFixed(2)}s`);
 
   self.postMessage(data);
 }

@@ -132,6 +132,9 @@ export class Canvas extends CustomElement {
 
   onMessage() {
     this.busy = false;
+    if (this.queue) {
+      this.render();
+    }
   }
 
   get containerWidth() {
@@ -142,10 +145,11 @@ export class Canvas extends CustomElement {
     const { editor, width, offset, bpp, scanline, containerWidth } = this;
 
     if (this.busy) {
-      console.log("Renderer busy, skipping");
+      this.queue = true;
       return;
     }
 
+    this.queue = false;
     this.busy = true;
     const b = editor.buffer;
     this.worker.postMessage({
