@@ -1,63 +1,48 @@
 let $canvas;
 
 /**
- * @param {number[]} arr
+ * @param {Uint8Array} arr
  * @returns {number}
  */
 const avg = (arr) => arr.length < 1 ? 0 : arr.reduce((a, b) => a + b, 0) / arr.length;
-
-/**
- * @template T
- * @param {T[]} arr
- * @param {number} size
- * @returns {T[][]}
- */
-const toChunks = (arr, size) => {
-  if (size < 1) return [arr];
-  let i = 0;
-  const chunks = [];
-  while (i < arr.length) {
-    chunks.push(arr.slice(i, i + size));
-    i += size;
-  }
-  return chunks;
-}
 
 function setup(data) {
   $canvas = data.$canvas;
 }
 
-function render({ buffer, offset, width, bpp, scanline, containerWidth }) {
+async function render({ buffer, offset, width, bpp, scanline, containerWidth }) {
   if (!$canvas) {
     console.error("trying to render but no canvas present");
     return;
   }
 
-  const start = Date.now();
   const scale = containerWidth / width;
   $canvas.width = containerWidth;
   $canvas.height = Math.ceil(buffer.byteLength / width) * scale;
 
-  const ctx = $canvas.getContext("2d");
-  ctx.scale(scale, scale);
-  ctx.clearRect(0, 0, $canvas.width, $canvas.height);
-
-  let y = 0;
-  let o = offset;
+  const start = Date.now();
   const data = new Uint8Array(buffer);
-  while (o < data.byteLength) {
-    const line = toChunks(data.subarray(o, o + width * bpp), bpp)
-      .map(avg)
-      .map(v => v.toString(16).padStart(2, "0"));
 
-    line.forEach((s, i) => {
-      ctx.fillStyle = `#${s}${s}${s}`;
-      ctx.fillRect(i, y, 1, 1);
-    });
-    y++;
-    o += width * bpp + scanline;
+  let index = 0;
+  const img = new ImageData(width, Math.ceil(data.byteLength / width) || 1);
+  while (offset < data.byteLength && index < img.data.length) {
+    const v = avg(data.subarray(offset, offset + bpp));
+    img.data[index++] = v;
+    img.data[index++] = v;
+    img.data[index++] = v;
+    img.data[index++] = 255;
+    offset += bpp;
+    if (index % width === 0) offset += scanline;
   }
-  console.log(`Render took ${((Date.now() - start) / 1000).toFixed(2)}s`);
+  while (index < img.data.length) {
+    img.data[index++] = 0;
+  }
+
+  const ctx = $canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, $canvas.width, $canvas.height);
+  ctx.drawImage(await createImageBitmap(img), 0, 0, img.width, img.height, 0, 0, $canvas.width, $canvas.height);
+  console.log(`Canvas rendered in ${((Date.now() - start) / 1000).toFixed(2)}s`);
 
   self.postMessage(data);
 }
