@@ -15,12 +15,12 @@ export class Strings extends CustomElement {
     this.editor = editor;
     this.worker = new Worker("modules/strings-worker.js");
 
-    this.onBufferChange = debounce(this.onBufferChange.bind(this), 200);
+    this.onBufferChange = this.onBufferChange.bind(this);
     this.onSearchTermChange = this.onSearchTermChange.bind(this);
     this.onStringClick = this.onStringClick.bind(this);
     this.handleInputChange = this.handleInputChange.bind(this);
     this.onMessage = this.onMessage.bind(this);
-    this.render = this.render.bind(this);
+    this.render = debounce(this.render.bind(this), 100);
 
     createPanel(
       this,

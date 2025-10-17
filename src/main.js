@@ -11,16 +11,28 @@ function createFile() {
   editor.openFile(new DataBuffer(16));
 }
 
-function openFile(e) {
+async function openFile(e) {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  const fileReader = new FileReader();
-  fileReader.onload = ({ target }) => {
-    const buffer = new DataBuffer(target.result);
-    editor.openFile(buffer, file.name);
+  editor.openFile(new DataBuffer(0, 0, 0), file.name);
+  editor.buffer.buffer.grow(file.size);
+
+  const fileStream = file.stream();
+  const reader = fileStream.getReader();
+
+  const arr = new Uint8Array(editor.buffer.buffer);
+  let offset = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    arr.set(value, offset);
+    offset += value.length;
   }
-  fileReader.readAsArrayBuffer(file);
+
+  // make everything render
+  setTimeout(editor.setBuffer.bind(editor, editor.buffer));
 }
 
 function saveFile() {
