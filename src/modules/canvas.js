@@ -154,7 +154,7 @@ export class Canvas extends CustomElement {
     const b = editor.buffer;
     this.worker.postMessage({
       action: "render",
-      buffer: b.buffer.slice(b.offsetstart, b.offsetend),
+      buffer: b.buffer.slice(b.startOffset, b.endOffset),
       containerWidth,
       bpp,
       width,

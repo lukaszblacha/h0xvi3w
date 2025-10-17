@@ -100,7 +100,7 @@ export class ValuesExplorer extends CustomElement {
 
   render() {
     const { value, bigEndian } = this;
-    const table = $("table", {}, [
+    const table = $("table", { class: "notranslate" }, [
       ["bin", formatBinValue(value)],
       ["chr", formatChar(value)],
       ["i8", formatInt(value, 8, true, bigEndian)],
