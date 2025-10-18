@@ -22,25 +22,15 @@ hv-editor.panel {
   }
 
   .panel-body {
+    position: relative;
+    overflow: hidden;
+
     *::selection {
       background-color: #F005;
     }
 
     .col-hex {
       text-transform: lowercase;
-    }
-
-    [contenteditable] {
-      outline: none;
-      caret-color: #FF0000;
-      background-color: inherit;
-      color: inherit;
-      border: none;
-      resize: none;
-      font: inherit;
-      overflow-wrap: anywhere;
-      line-break: anywhere;
-      white-space: break-spaces;
     }
   }
 

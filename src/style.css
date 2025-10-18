@@ -2,6 +2,8 @@
 @import url("highlights.css");
 @import url("components/menu.css");
 @import url("components/panel.css");
+@import url("components/scrollbar.css");
+@import url("components/window.css");
 @import url("modules/editor.css");
 @import url("modules/strings.css");
 @import url("modules/values-explorer.css");
@@ -26,6 +28,7 @@ body {
   --color-mild-text: #545556;
   --cell-hover-background: #dddedf;
   --color-input-container-bg: #343536aa;
+  --color-accent: #FFA50080;
 }
 
 #root {
@@ -168,7 +171,7 @@ td:first-child {
 }
 
 tr:hover td {
-  background-color: #FFA50080;
+  background-color: var(--color-accent);
 }
 
 tr:nth-child(2n) {

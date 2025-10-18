@@ -55,9 +55,9 @@ export function writeInt(buffer, offset, bits, signed, bigEndian, _value) {
 export const MAX_BUFFER_SIZE = 1024 * 1024 * 10;
 
 export class DataBuffer extends EventTarget {
-  constructor(data = new Uint8Array(0), startOffset = 0, endOffset = data.length) {
+  constructor(data = new Uint8Array(0), startOffset = 0, endOffset = data.length, capacity = MAX_BUFFER_SIZE) {
     super();
-    this.buffer = new SharedArrayBuffer(0, { maxByteLength: MAX_BUFFER_SIZE });
+    this.buffer = new SharedArrayBuffer(0, { maxByteLength: capacity });
     this.from(data, startOffset, endOffset);
   }
 
@@ -66,13 +66,20 @@ export class DataBuffer extends EventTarget {
   }
 
   from(data, startOffset = 0, endOffset) {
-    if (data instanceof DataBuffer) {
+    if (typeof data === "number") {
+      this.grow(data);
+    } else if (data instanceof DataBuffer || ('buffer' in data && data.buffer instanceof SharedArrayBuffer)) {
       this.buffer = data.buffer;
     } else if (data instanceof ArrayBuffer) {
       this.grow(data.byteLength);
       new Uint8Array(this.buffer).set(new Uint8Array(data));
-    } else if (typeof data === "number") {
-      this.grow(data);
+    } else if (data instanceof Uint8Array) {
+      this.grow(data.byteLength);
+      new Uint8Array(this.buffer).set(data);
+    } else if (data instanceof SharedArrayBuffer) {
+      this.buffer = data;
+    } else {
+      throw new Error("DataBuffer: Unsupported source provided");
     }
     this.startOffset = Math.min(startOffset, this.buffer.byteLength);
     this.endOffset = Math.min(Math.max(this.startOffset, endOffset ?? this.buffer.byteLength), this.buffer.byteLength);
@@ -127,7 +134,12 @@ export class DataBuffer extends EventTarget {
   }
 
   delete(startOffset, length) {
-    this.insert([], this.startOffset + startOffset, this.startOffset + startOffset + length);
+    if (!length) return;
+    const data = new Uint8Array(this.buffer);
+    // shift data left
+    data.copyWithin(this.startOffset + startOffset, this.startOffset + startOffset + length);
+    this.endOffset -= length;
+
     const detail = { startOffset, endOffset: startOffset + length, length: 0 };
     this.dispatchEvent(new CustomEvent("delete", { detail }));
     this.dispatchEvent(new CustomEvent("change", { detail }));
@@ -136,11 +148,14 @@ export class DataBuffer extends EventTarget {
   }
 
   subarray(start, end = this.endOffset) {
-    return new Uint8Array(this.buffer.slice(this.startOffset + start, this.startOffset + end));
+    return new Uint8Array(this.buffer.slice(
+      Math.max(0, this.startOffset + start),
+      Math.min(this.startOffset + end, this.endOffset)
+    ));
   }
 
   slice(start, end = this.endOffset) {
-    return new Uint8Array(this.buffer.slice(this.startOffset + start, this.startOffset + end));
+    return this.subarray(start, end);
   }
 
   at(i) {

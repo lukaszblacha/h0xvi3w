@@ -117,8 +117,8 @@ export const packer = (format, spec) => {
     return p;
   }
 
-  function from(source = new DataBuffer(0)) {
-    let buffer = isBufferLike(source) ? source.toBuffer() : source;
+  function from(source) {
+    let buffer = isBufferLike(source) ? source.toBuffer() : new DataBuffer(source);
 
     return Object.freeze({
       bufferLength,
