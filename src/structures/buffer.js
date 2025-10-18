@@ -104,8 +104,7 @@ export class DataBuffer extends EventTarget {
 
   insert(chunk, startOffset, endOffset = startOffset) {
     const toRemove = endOffset - startOffset;
-    const endOfWrite = startOffset + chunk.length - toRemove;
-    this.grow(endOfWrite);
+    this.grow(this.endOffset + chunk.length - toRemove);
 
     const data = new Uint8Array(this.buffer);
 
