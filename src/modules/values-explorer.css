@@ -4,5 +4,8 @@ hv-values-explorer {
 
   .panel-body {
     align-items: flex-start;
+    .right {
+      font-family: "JetBrains Mono", monospace;
+    }
   }
 }

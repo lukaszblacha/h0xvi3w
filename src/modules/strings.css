@@ -39,6 +39,7 @@ hv-strings {
       overflow: auto visible;
 
       span {
+        font-family: "JetBrains Mono", monospace;
         color: #fff8;
       }
 

@@ -4,6 +4,7 @@ hv-split:has(hv-editor), hv-tabs:has(hv-editor) {
 
 hv-editor.panel {
   .panel-header, .panel-body {
+    font-family: "JetBrains Mono", monospace;
     display: grid;
     justify-content: unset;
     gap: 20px;
