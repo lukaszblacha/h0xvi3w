@@ -41,6 +41,7 @@ export const defaultLayout = {
                   "offset": 0,
                   "bpp": 1,
                   "scanline": 0,
+                  "limit": 0,
                 }
               ]
             }

@@ -73,6 +73,7 @@ export class Layout extends HTMLElement {
         component.setAttribute("offset", cfg.offset);
         component.setAttribute("bpp", cfg.bpp);
         component.setAttribute("scanline", cfg.scanline);
+        component.setAttribute("limit", cfg.limit);
         break;
       }
       case "hv-struct": {
