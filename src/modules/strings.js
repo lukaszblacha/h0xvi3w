@@ -12,13 +12,15 @@ export class Strings extends CustomElement {
   constructor(editor) {
     super(attributes);
 
-    this.strArray = [];
     this.editor = editor;
+    this.worker = new Worker("modules/strings-worker.js");
 
-    this.onBufferChange = debounce(this.onBufferChange.bind(this), 200);
+    this.onBufferChange = this.onBufferChange.bind(this);
     this.onSearchTermChange = this.onSearchTermChange.bind(this);
     this.onStringClick = this.onStringClick.bind(this);
     this.handleInputChange = this.handleInputChange.bind(this);
+    this.onMessage = this.onMessage.bind(this);
+    this.render = debounce(this.render.bind(this), 100);
 
     createPanel(
       this,
@@ -30,12 +32,12 @@ export class Strings extends CustomElement {
               $("input", { type: "search", name: "term" }),
             ]),
             $("label", {}, [
-              $("span", {}, ["Minimum length"]),
+              $("span", {}, ["Min length"]),
               $("input", { type: "number", name: "min-length", min: 3, max: 15, step: 1, value: 6 }),
             ]),
             $("input", { type: "checkbox", name: "case-sensitive", title: "Match case", label: "Aa" })
           ]),
-        body: $("div", { class: "list" })
+        body: $("div", { class: "list notranslate" })
       }
     )
 
@@ -50,6 +52,7 @@ export class Strings extends CustomElement {
       [this.$minLength, { change: this.handleInputChange }],
       [this.$caseSensitive, { change: this.handleInputChange }],
       [this.editor.buffer, { change: this.onBufferChange }],
+      [this.worker, { message: this.onMessage }]
     ];
   }
 
@@ -74,7 +77,7 @@ export class Strings extends CustomElement {
       }
       default: return;
     }
-    this.render(this.$search.value);
+    this.render();
   }
 
   handleInputChange(e) {
@@ -82,17 +85,25 @@ export class Strings extends CustomElement {
     this.setAttribute(name, type.toLowerCase() === "checkbox" ? String(checked) : value);
   }
 
-  render(filter = "") {
-    const fc = this.caseSensitive
-      ? (str) => str.includes(filter)
-      : (str) => str.toLowerCase().includes(filter.toLowerCase());
+  onMessage({ data }) {
+    const { offsets, ends } = data;
 
     this.$body.innerText = "";
-    this.strArray.forEach(([str, offset]) => {
-      if (str.length >= this.minLength && (!filter || fc(str))) {
+
+    const query = this.caseSensitive ? this.$search.value : this.$search.value.toLowerCase();
+
+    let fc = this.caseSensitive
+      ? (str) => str.includes(query)
+      : (str) => str.toLowerCase().includes(query);
+    if (!query) fc = () => true;
+
+    offsets.forEach((offset, index) => {
+      const endOffset = ends[index];
+      const str = this.editor.buffer.readString(offset, endOffset);
+      if (fc(str)) {
         this.$body.appendChild($(
           "div",
-          { class: "string", "data-start": offset, "data-end": offset + str.length },
+          { class: "string", "data-start": offset, "data-end": endOffset },
           [
             $("span", {}, `${offset.toString(16).padStart(5, "0").toUpperCase()}h: `),
             str
@@ -100,11 +111,33 @@ export class Strings extends CustomElement {
         ));
       }
     });
+
+    this.busy = false;
+    if (this.queue) {
+      this.render();
+    }
+  }
+
+  render() {
+    if (this.busy) {
+      this.queue = true;
+      return;
+    }
+
+    const { editor, minLength } = this;
+
+    this.queue = false;
+    this.busy = true;
+    const b = editor.buffer;
+    this.worker.postMessage({
+      action:"search",
+      buffer: b.buffer.slice(b.startOffset, b.endOffset),
+      minLength,
+    });
   }
 
   onSearchTermChange() {
-    cancelAnimationFrame(this.afRid);
-    this.afRid = requestAnimationFrame(() => this.render(this.$search.value));
+    this.render();
   }
 
   onStringClick({ target }) {
@@ -113,27 +146,8 @@ export class Strings extends CustomElement {
     }
   }
 
-  parseStrings(buffer) {
-    this.strArray = [];
-
-    let str = "";
-    for (let i in buffer) {
-      const chr = buffer[i];
-      if (chr >= 0x20 && chr < 0x7f) {
-        str = str.concat(String.fromCharCode(chr));
-      } else if (str.length) {
-        if (str.length >= 3) {
-          this.strArray.push([str, i - str.length]);
-        }
-        str = "";
-      }
-    }
-    if (str.length) this.strArray.push([str, buffer.length - str.length]);
-    this.onSearchTermChange();
-  }
-
   onBufferChange(){
-    this.parseStrings(this.editor.buffer.getBuffer())
+    this.render();
   }
 }
 customElements.define("hv-strings", Strings);

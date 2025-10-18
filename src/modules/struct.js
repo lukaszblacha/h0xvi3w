@@ -1,7 +1,6 @@
 import { $, CustomElement } from "../dom.js";
 import { createPanel } from "../components/panel.js";
 import { packer } from "../utils/packer.js";
-import { DataBuffer } from "../structures/buffer.js";
 import { StructTemplate } from "./struct-template.js";
 import { HVStorage } from "../utils/storage.js";
 
@@ -90,7 +89,7 @@ export class Struct extends CustomElement {
     const { offset } = this;
     const { format, spec } = this.storage.load()[this.templateName];
     const p = packer(format, spec);
-    this.render(p.from(new DataBuffer(this.editor.buffer, offset)).toJSON(), p.tokens);
+    this.render(p.from(this.editor.buffer.slice(offset)).toJSON(), p.tokens);
 
     const highlights = p.tokens.map((token, index) => {
       return { name: index % 2 ? "red" : "green", start: offset + token.offset, end: offset + token.offset + token.length * token.size };

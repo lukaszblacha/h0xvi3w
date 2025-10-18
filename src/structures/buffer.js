@@ -67,8 +67,7 @@ export class DataBuffer extends EventTarget {
 
   from(data, startOffset = 0, endOffset) {
     if (data instanceof DataBuffer) {
-      this.grow(data.length);
-      new Uint8Array(this.buffer).set(new Uint8Array(data.buffer));
+      this.buffer = data.buffer;
     } else if (data instanceof ArrayBuffer) {
       this.grow(data.byteLength);
       new Uint8Array(this.buffer).set(new Uint8Array(data));
@@ -87,9 +86,6 @@ export class DataBuffer extends EventTarget {
   }
 
   grow(newSize) {
-    if (newSize > MAX_BUFFER_SIZE) {
-      throw new Error("Maximum buffer size exceeded");
-    }
     if (newSize > this.buffer.byteLength) {
       this.buffer.grow(newSize);
     }
@@ -110,9 +106,6 @@ export class DataBuffer extends EventTarget {
     const toRemove = endOffset - startOffset;
     const endOfWrite = startOffset + chunk.length - toRemove;
     this.grow(endOfWrite);
-    if (endOfWrite > this.endOffset) {
-      this.endOffset = endOfWrite;
-    }
 
     const data = new Uint8Array(this.buffer);
 

@@ -74,9 +74,9 @@ export class HexEditor extends CustomElement {
       { label: "Editor", disposable: false }, {
         header: [
           $("div", { class: "col-index" }, "offset"),
-          $("div", { class: "col-bin hidden" }, headerText(lineWidth, 8)),
-          $("div", { class: "col-hex hidden" }, headerText(lineWidth, 2)),
-          $("div", { class: "col-ascii hidden" }, headerText(lineWidth, 1)),
+          $("div", { class: "col-bin hidden notranslate" }, headerText(lineWidth, 8)),
+          $("div", { class: "col-hex hidden notranslate" }, headerText(lineWidth, 2)),
+          $("div", { class: "col-ascii hidden notranslate" }, headerText(lineWidth, 1)),
         ],
         body: [
           $("div", { class: "col-index" }),
