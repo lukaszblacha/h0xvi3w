@@ -44,7 +44,7 @@ hv-strings {
       }
 
       &:hover {
-        background-color: rgb(136, 89, 0);
+        background-color: var(--color-accent);
       }
     }
   }

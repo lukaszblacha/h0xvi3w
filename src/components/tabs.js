@@ -118,7 +118,7 @@ export class Tabs extends CustomElement {
     }
   }
 
-  onDragEnter(e) {
+  onDragEnter() {
     const $source = document.querySelector("[dnd-source-tab]");
     if ($source) {
       bindAll(this.$container, { dragover: this.onDragOver }, false);
@@ -153,7 +153,7 @@ export class Tabs extends CustomElement {
     if (!this.$container.classList.contains(className)) {
       this.$container.classList.add(className);
       const classes = Array.from(this.$container.classList).filter(c => c.startsWith("drop-") && c !== className);
-      if (classes.length) this.$container.classList.remove(classes);
+      if (classes.length) this.$container.classList.remove(...classes);
     }
   }
 
@@ -164,7 +164,7 @@ export class Tabs extends CustomElement {
     this.$container.classList.remove("drop-top", "drop-left", "drop-right", "drop-bottom", "drop-center");
   }
 
-  onDrop(e) {
+  onDrop() {
     unbindAll(this.$container, { dragover: this.onDragOver }, false);
 
     const $source = document.querySelector("[dnd-source-tab]");

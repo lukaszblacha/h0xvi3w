@@ -119,7 +119,7 @@ export class HexEditor extends CustomElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if ([undefined, null].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
+    if ([undefined, null, "null", "undefined"].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
 
     switch (name) {
       case "views": {
@@ -149,8 +149,8 @@ export class HexEditor extends CustomElement {
     if (views.includes("bin")) tpl += " 128ch";
     if (views.includes("hex")) tpl += " 32ch";
     if (views.includes("ascii")) tpl += " 16ch";
-    this.querySelector(".panel-header").style.gridTemplateColumns = tpl;
-    this.querySelector(".panel-body").style.gridTemplateColumns = tpl;
+    this.querySelector(".panel-header").style.setProperty("grid-template-columns", tpl);
+    this.querySelector(".panel-body").style.setProperty("grid-template-columns", tpl);
   }
 
   enableView(name) {

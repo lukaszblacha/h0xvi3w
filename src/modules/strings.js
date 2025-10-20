@@ -64,7 +64,7 @@ export class Strings extends CustomElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if ([undefined, null].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
+    if ([undefined, null, "null", "undefined"].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
 
     switch (name) {
       case "min-length": {

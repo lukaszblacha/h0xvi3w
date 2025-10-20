@@ -30,7 +30,7 @@ export class DataWindow extends CustomElement {
     this.selectionRange = range(this.$textNode, 0, 0);
 
     this.classList.add("window", "notranslate");
-    this.style.width = `${this.lineWidth * this.charsPerByte}ch`;
+    this.style.setProperty("width", `${this.lineWidth * this.charsPerByte}ch`);
     this.setAttribute("spellcheck", false);
     this.setAttribute("contenteditable", "plaintext-only");
     this.setAttribute("autocomplete", "off");

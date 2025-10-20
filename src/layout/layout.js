@@ -1,4 +1,4 @@
-import { isKnob, Split } from "../components/split.js";
+import { isDivider, Split } from "../components/split.js";
 import { Tabs } from "../components/tabs.js";
 import { Strings } from "../modules/strings.js";
 import { ValuesExplorer } from "../modules/values-explorer.js";
@@ -119,13 +119,13 @@ export class Layout extends HTMLElement {
       this.querySelectorAll("hv-split").forEach(($split) => {
         const splitSize = $split.getSize();
         [...$split.children]
-          .filter((el) => !isKnob(el))
+          .filter((el) => !isDivider(el))
           .map((el) => {
             const rect = el.getBoundingClientRect();
             return [el, $split.orientation === "horizontal" ? rect.width : rect.height];
           })
           .forEach(([c, size]) => {
-            c.style.flex = `1 1 ${size / splitSize * 100}%`;
+            c.style.setProperty("flex", `1 1 ${size / splitSize * 100}%`);
           });
       });
     });

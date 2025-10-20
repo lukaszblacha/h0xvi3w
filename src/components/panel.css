@@ -6,6 +6,8 @@
   line-height: 20px;
   font-size: 14px;
 
+  --toolbar-gap: 7px;
+
   .panel-header, .panel-body, .panel-footer {
     display: flex;
     padding: 0 1ch;
@@ -53,6 +55,7 @@
     align-self: flex-start;
     align-items: flex-end;
     width: 100%;
-    padding: 7px 1ch;
+    padding: var(--toolbar-gap);
+    gap: var(--toolbar-gap);
   }
 }

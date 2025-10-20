@@ -1,6 +1,6 @@
-import { CustomElement, $, bindAll } from "../dom.js";
+import { CustomElement, $, bindAll, smoothen } from "../dom.js";
 
-export const isKnob = ($el) => $el.classList.contains("hv-knob");
+export const isDivider = ($el) => $el.classList.contains("divider");
 
 const fields = {
   orientation: { type: "string", defaultValue: "horizontal" },
@@ -15,9 +15,7 @@ export class Split extends CustomElement {
 
 
     this._events = [
-      [this, {
-        mousedown: this.onKnobDragStart.bind(this)
-      }, true],
+      [this, { mousedown: this.onDividerDragStart.bind(this) }],
     ];
   }
 
@@ -35,7 +33,7 @@ export class Split extends CustomElement {
   }
 
   onChildNodesChange() {
-    const components = Array.from(this.children).filter(el => !isKnob(el));
+    const components = Array.from(this.children).filter(el => !isDivider(el));
     switch (components.length) {
       case 0: {
         this.remove();
@@ -43,73 +41,69 @@ export class Split extends CustomElement {
       }
       case 1: {
         const $child = components[0];
-        $child.style.flex = this.style.flex;
+        $child.style.setProperty("flex", this.style.flex);
         this.parentNode.insertBefore($child, this);
         this.remove();
         return;
       }
     }
 
-    // remove knob as first child
-    if (isKnob(this.children[0])) {
+    // remove divider as first child
+    if (isDivider(this.children[0])) {
       this.removeChild(this.children[0]);
       return;
     }
 
-    // remove knob as last child
-    if (isKnob(this.children[this.children.length - 1])) {
+    // remove divider as last child
+    if (isDivider(this.children[this.children.length - 1])) {
       this.removeChild(this.children[this.children.length - 1]);
       return;
     }
 
     let i = 1;
     while (this.children[i]) {
-      if (isKnob(this.children[i - 1])) {
-        // remove knob next to a knob
-        if (isKnob(this.children[i])) {
+      if (isDivider(this.children[i - 1])) {
+        // remove divider next to a divider
+        if (isDivider(this.children[i])) {
           this.removeChild(this.children[i]);
           return;
         }
-      } else if (!isKnob(this.children[i])) {
-        // add knob in between two components
-        this.children[i].insertAdjacentElement("beforebegin", $("div", { class: "hv-knob" }));
+      } else if (!isDivider(this.children[i])) {
+        // add divider in between two components
+        this.children[i].insertAdjacentElement("beforebegin", $("div", { class: "divider" }));
         return;
       }
       i++;
     }
   }
 
-  onKnobDragStart({ target: knob }) {
-    if (knob.parentNode === this && knob.classList.contains("hv-knob")) {
-      knob.classList.add("active");
-      const getSize = this.orientation === "horizontal" ? (rect) => rect.width : (rect) => rect.height;
-      const getOffset = this.orientation === "horizontal" ? (rect) => rect.x : (rect) => rect.y;
+  onDividerDragStart({ target: divider }) {
+    if (divider.parentNode !== this || !divider.classList.contains("divider")) return;
 
-      const prevElement = knob.previousElementSibling;
-      const nextElement = knob.nextElementSibling;
-      const prevRect = prevElement.getBoundingClientRect();
-      const nextRect = nextElement.getBoundingClientRect();
+    divider.classList.add("active");
+    const getSize = this.orientation === "horizontal" ? (rect) => rect.width : (rect) => rect.height;
+    const getOffset = this.orientation === "horizontal" ? (rect) => rect.x : (rect) => rect.y;
 
-      const containerSize = getSize(this.getBoundingClientRect());
-      const maxSize = getSize(prevRect) + getSize(nextRect);
+    const prevElement = divider.previousElementSibling;
+    const nextElement = divider.nextElementSibling;
+    const prevRect = prevElement.getBoundingClientRect();
+    const nextRect = nextElement.getBoundingClientRect();
 
-      let ref;
-      const unbind = bindAll(document.body, {
-        mousemove: (ev) => {
-          const mouseOffset = this.orientation === "horizontal" ? ev.clientX : ev.clientY;
-          cancelAnimationFrame(ref);
-          ref = requestAnimationFrame(() => {
-            const newSize = Math.max(10, Math.min((mouseOffset - getOffset(prevRect)), maxSize * 0.9) / containerSize * 100);
-            prevElement.style.flex = `1 1 ${newSize}%`;
-            nextElement.style.flex = `1 1 ${(maxSize / containerSize * 100) - newSize}%`;
-          })
-        },
-        mouseup: () => {
-          unbind();
-          knob.classList.remove("active");
-        }
-      }, true);
-    }
+    const containerSize = getSize(this.getBoundingClientRect());
+    const maxSize = getSize(prevRect) + getSize(nextRect);
+
+    const unbind = bindAll(document.body, {
+      mousemove: smoothen(({ clientX, clientY }) => {
+        const mouseOffset = this.orientation === "horizontal" ? clientX : clientY;
+        const newSize = Math.max(10, Math.min((mouseOffset - getOffset(prevRect)), maxSize * 0.9) / containerSize * 100);
+        prevElement.style.setProperty("flex", `1 1 ${newSize}%`);
+        nextElement.style.setProperty("flex", `1 1 ${(maxSize / containerSize * 100) - newSize}%`);
+      }),
+      mouseup() {
+        unbind();
+        divider.classList.remove("active");
+      }
+    });
   }
 
   getSize() {
@@ -125,7 +119,7 @@ export class Split extends CustomElement {
       0
     );
     const newSize = (maxSize - cumulatedSize) / maxSize * 100;
-    $child.style.flex = `1 1 ${newSize}%`;
+    $child.style.setProperty("flex", `1 1 ${newSize}%`);
   }
 }
 

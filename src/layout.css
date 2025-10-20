@@ -24,20 +24,17 @@ hv-split[orientation="vertical"] {
     flex-direction: column;
 }
 
-.hv-knob {
+.divider {
     flex: 0 0 6px;
-    background-color: #0005;
     border-radius: 3px;
-    margin: 3px 0;
     cursor: col-resize;
 }
 
-.hv-knob:hover, .hv-knob.active {
-  background-color: rgb(136, 89, 0);
+.divider:hover, .divider.active {
+  background-color: var(--color-accent);
 }
 
-hv-split[orientation="vertical"] > .hv-knob {
-    margin: 0 3px;
+hv-split[orientation="vertical"] > .divider {
     cursor: row-resize;
 }
 
@@ -51,7 +48,7 @@ hv-tabs {
 
     &[tabs-position="bottom"] {
         grid-template-rows: 1fr 22px;
-        & > *:nth-child(1) {
+        & > .tabs-list {
             order: 1;
         }
 
