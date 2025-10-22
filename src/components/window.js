@@ -1,6 +1,6 @@
 import { CustomElement } from "../dom.js";
 import { range, setCaret } from "../utils/text.js";
-import { normalizeInt, normalizeSelectionOffsets } from "../utils/numbers.js";
+import { normalizeNumber, normalizeSelectionOffsets } from "../utils/numbers.js";
 
 function isRemoveAction(inputType) {
   return inputType.startsWith("delete");
@@ -174,8 +174,8 @@ export class DataWindow extends CustomElement {
     );
 
     this.skipSelectionHandler = true;
-    selectionRange.setStart($textNode, normalizeInt(start, 0, $textNode.data.length));
-    selectionRange.setEnd($textNode, normalizeInt(end, 0, $textNode.data.length));
+    selectionRange.setStart($textNode, normalizeNumber(start, 0, $textNode.data.length));
+    selectionRange.setEnd($textNode, normalizeNumber(end, 0, $textNode.data.length));
     this.skipSelectionHandler = false;
   }
 
@@ -186,7 +186,7 @@ export class DataWindow extends CustomElement {
   setCaret(byteOffset, subByteOffset = 0) {
     const { charsPerByte, $textNode, editor } = this;
     const { viewOffsetStart } = editor;
-    editor.scrollIntoView(byteOffset + 1); // sub-byte
+    editor.scrollIntoView(byteOffset + Math.ceil(subByteOffset));
     const scrollDiff = viewOffsetStart - editor.viewOffsetStart;
     const caretPosition = (byteOffset - viewOffsetStart + scrollDiff) * charsPerByte + subByteOffset;
     setCaret($textNode, caretPosition);

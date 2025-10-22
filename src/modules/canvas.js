@@ -150,7 +150,7 @@ export class Canvas extends CustomElement {
   }
 
   get containerWidth() {
-    return this.querySelector(".canvas-body").clientWidth;
+    return this.querySelector(".canvas-body").offsetWidth;
   }
 
   render() {

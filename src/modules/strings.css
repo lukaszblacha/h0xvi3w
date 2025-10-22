@@ -21,6 +21,7 @@ hv-strings {
   }
 
   .panel-body {
+    position: relative;
     display: flex;
     flex-direction: column;
     padding: 0;

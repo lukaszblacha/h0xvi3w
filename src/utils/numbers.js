@@ -1,4 +1,4 @@
-export function normalizeInt(value, minValue = 0, maxValue = 1) {
+export function normalizeNumber(value, minValue = 0, maxValue = 1) {
   return Math.max(minValue, Math.min(maxValue, value));
 }
 

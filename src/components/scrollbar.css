@@ -1,0 +1,69 @@
+hv-scrollbar {
+    position: absolute;
+    background: #333;
+    border: solid 1px;
+    container-type: size;
+
+    --progress: 0;
+    --gap: 4px;
+    --thickness: 8px;
+    --handle-gap: 0px;
+    --handle-size: 0px;
+
+    & > .scrollbar-handle {
+        position: absolute;
+        inset: var(--handle-gap);
+    }
+}
+
+hv-scrollbar:not([orientation="horizontal"]) {
+    inset: var(--gap) var(--gap) var(--gap) auto;
+    width: var(--thickness);
+    --offset: calc(var(--progress) * (100cqh - var(--handle-size) - 2 * (var(--handle-gap))));
+
+    & > .scrollbar-handle {
+        height: var(--handle-size);
+        transform: translateY(var(--offset));
+    }
+}
+
+hv-scrollbar[orientation="horizontal"] {
+    inset: auto var(--gap) var(--gap) var(--gap);
+    height: var(--thickness);
+    --offset: calc(var(--progress) * (100cqw - var(--handle-size) - 2 * (var(--handle-gap))));
+
+    & > .scrollbar-handle {
+        width: var(--handle-size);
+        transform: translateX(var(--offset));
+    }
+}
+
+hv-scrollbar[disabled] {
+    opacity: 0.2;
+    pointer-events: none;
+    & > .scrollbar-handle {
+        display: none;
+    }
+}
+
+/* Fancy stuff */
+hv-scrollbar {
+    --radius: calc(var(--thickness) / 2);
+    background-color: var(--color-input-container-bg);
+    border-radius: var(--radius);
+    border-color: #fff2;
+    box-shadow: 0 1px 5px #10111280;
+    transition: opacity 100ms linear;
+
+    &:not([disabled]):hover {
+        opacity: 1;
+        backdrop-filter: blur(2px);
+    }
+
+    .scrollbar-handle {
+        background: var(--color-accent);
+        border-radius: inherit;
+        box-shadow: 0 1px 5px #10111280;
+        transition: height 50ms linear;
+    }
+}

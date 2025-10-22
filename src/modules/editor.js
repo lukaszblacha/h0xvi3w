@@ -2,9 +2,10 @@ import { $, CustomElement, debounce } from "../dom.js";
 import { createPanel } from "../components/panel.js";
 import { highlight, range } from "../utils/text.js";
 import { DataBuffer } from "../structures/buffer.js";
+import { Scrollbar } from "../components/scrollbar.js";
 import { DataWindow } from "../components/window.js";
 import { binToU8, charToU8, hexToU8, u8ToBin, u8ToChar, u8ToHex } from "../utils/converters.js";
-import { normalizeInt, normalizeSelectionOffsets, quantizeDown } from "../utils/numbers.js";
+import { normalizeNumber, normalizeSelectionOffsets } from "../utils/numbers.js";
 
 function parseViewsAttribute(str) {
   return (str || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -77,14 +78,18 @@ export class HexEditor extends CustomElement {
           $("div", { class: "col-index" }),
           $("div", { class: "col-bin hidden" }),
           $("div", { class: "col-hex hidden" }),
-          $("div", { class: "col-ascii hidden" })
+          $("div", { class: "col-ascii hidden" }),
+          new Scrollbar(),
         ],
         footer: [$("div"), $("div"), $("div"), $("div")],
       }
     );
 
+    const { $mode, $body, $scrollbar } = this.$dom;
     this._events = [
-      [this.$dom.$mode, { click: this.switchMode.bind(this) }],
+      [$mode, { click: this.switchMode.bind(this) }],
+      [$body, { wheel: $scrollbar.onWheel }],
+      [$scrollbar, { vscroll: this.onScroll.bind(this) }],
       [this, {
         windowselectionchange: this.onWindowSelectionChange.bind(this)
       }, false],
@@ -146,9 +151,9 @@ export class HexEditor extends CustomElement {
 
   updateGridTemplate(views) {
     let tpl = "55px";
-    if (views.includes("bin")) tpl += " 128ch";
-    if (views.includes("hex")) tpl += " 32ch";
-    if (views.includes("ascii")) tpl += " 16ch";
+    if (views.includes("bin")) tpl += ` ${this.lineWidth * 8}ch`;
+    if (views.includes("hex")) tpl += ` ${this.lineWidth * 2}ch`;
+    if (views.includes("ascii")) tpl += ` ${this.lineWidth}ch`;
     this.querySelector(".panel-header").style.setProperty("grid-template-columns", tpl);
     this.querySelector(".panel-body").style.setProperty("grid-template-columns", tpl);
   }
@@ -197,8 +202,9 @@ export class HexEditor extends CustomElement {
     const [$pos, $val, $size, $mode] = this.querySelectorAll(".panel-footer > *");
     const $body = this.querySelector(".panel-body");
     const $index = $body.firstChild;
+    const $scrollbar = $body.querySelector("hv-scrollbar");
 
-    return { $pos, $val, $size, $mode, $index, $body };
+    return { $pos, $val, $size, $mode, $index, $body, $scrollbar };
   }
 
   updateSelection(base, extent = base) {
@@ -237,39 +243,36 @@ export class HexEditor extends CustomElement {
   }
 
   setBuffer(buf) {
-    const { buffer, $dom: { $size, $index } } = this;
+    const { buffer, $dom: { $size } } = this;
     buffer.from(buf);
 
     $size.innerText = `size: ${displayValue(buffer.length)}`;
-
-    $index.innerText = new Array(Math.ceil(buffer.length / this.lineWidth)).fill(0)
-      .map((_, i) => (i * this.lineWidth)
-        .toString(16)
-        .padStart(6, 0))
-      .join("\n");
-
-      this.trigger("load", { buffer: buffer.getBuffer() });
-
-      this.setSelection(0);
+    this.renderOffsets();
+    this.trigger("load", { buffer: buffer.getBuffer() });
+    this.setSelection(0);
   }
 
   onBufferChange() {
-    const { buffer, viewOffsetStart, viewOffsetEnd, $dom: { $size } } = this;
-    $size.innerText = `size: ${displayValue(buffer.length)}`;
+    const { buffer, numLines, lineWidth, viewOffsetStart, viewOffsetEnd, characterHeight, $dom } = this;
+    $dom.$size.innerText = `size: ${displayValue(buffer.length)}`;
 
     Object.values(this.availableViews).forEach(({ active, window }) => {
       if (active) {
         window.render(buffer.slice(viewOffsetStart, viewOffsetEnd));
       }
     });
-    // update selection if scrolled?
+
+    $dom.$scrollbar.containerScrollSize = Math.ceil(buffer.length / lineWidth) * characterHeight;
+    $dom.$scrollbar.containerSize = numLines * characterHeight;
   }
 
   onResize() {
-    const { characterHeight, numLines, $dom: { $body } } = this;
-    this.numLines = Math.floor($body.clientHeight / characterHeight);
+    const { characterHeight, numLines, $dom } = this;
+    this.numLines = Math.floor($dom.$body.offsetHeight / characterHeight);
     if (this.numLines !== numLines) {
+      $dom.$scrollbar.containerSize = numLines * characterHeight;
       this.onBufferChange();
+      this.$dom.$scrollbar.render();
     }
   }
 
@@ -277,9 +280,9 @@ export class HexEditor extends CustomElement {
     const { viewOffsetEnd } = this;
     const [byteOffsetStart, byteOffsetEnd] = normalizeSelectionOffsets(start, end);
     if (byteOffsetEnd > viewOffsetEnd) {
-      this.scrollToPosition(byteOffsetEnd);
+      this.scrollIntoView(byteOffsetEnd);
     } else {
-      this.scrollToPosition(byteOffsetStart);
+      this.scrollIntoView(byteOffsetStart);
     }
     this.updateSelection(start, end);
   }
@@ -296,19 +299,44 @@ export class HexEditor extends CustomElement {
     })
   }
 
-  scrollToPosition(pos) {
+  onScroll({ detail: { position } }) {
+    const line = Math.floor(position / this.characterHeight);
+    this.scrollToLine(line);
+  }
+
+  scrollToLine(line) {
+    const { buffer, lineWidth, characterHeight, viewOffsetStart, numLines } = this;
+    const maxLine = Math.max(0, Math.ceil(buffer.length / lineWidth) - numLines);
+    line = normalizeNumber(line, 0, maxLine);
+    if (line * lineWidth !== viewOffsetStart) {
+      this.viewOffsetStart = line * lineWidth;
+      this.onBufferChange();
+      this.renderOffsets();
+      this.$dom.$scrollbar.position = line * characterHeight;
+    }
+  }
+
+  scrollIntoView(pos) {
     const { buffer, lineWidth, numLines, viewOffsetStart } = this;
     const windowSize = lineWidth * numLines;
-    pos = normalizeInt(pos, 0, buffer.length);
+    pos = normalizeNumber(pos, 0, buffer.length);
 
     if (pos < viewOffsetStart) {
-      this.viewOffsetStart = quantizeDown(pos, lineWidth);
-      this.onBufferChange();
+      this.scrollToLine(Math.floor(pos / lineWidth));
     } else if (pos >= viewOffsetStart + windowSize) {
-      const lineStartOffset = quantizeDown(pos, lineWidth);
-      this.viewOffsetStart = normalizeInt(lineStartOffset - windowSize + lineWidth, 0, buffer.length);
-      this.onBufferChange();
+      const line = Math.ceil(pos / lineWidth) - numLines;
+      this.scrollToLine(line);
     }
+  }
+
+  renderOffsets() {
+    const { lineWidth, viewOffsetStart, numLines } = this;
+
+    this.$dom.$index.innerText = new Array(numLines).fill(0)
+      .map((_, i) => (viewOffsetStart + i * lineWidth)
+        .toString(16)
+      )
+      .join("\n");
   }
 
   createDataView(name) {
