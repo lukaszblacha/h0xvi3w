@@ -151,9 +151,9 @@ export class HexEditor extends CustomElement {
 
   updateGridTemplate(views) {
     let tpl = "55px";
-    if (views.includes("bin")) tpl += ` ${this.lineWidth * 8}ch`;
-    if (views.includes("hex")) tpl += ` ${this.lineWidth * 2}ch`;
-    if (views.includes("ascii")) tpl += ` ${this.lineWidth}ch`;
+    if (views.includes("bin")) tpl += ` ${this.lineWidth * 8 + 0.2}ch`;
+    if (views.includes("hex")) tpl += ` ${this.lineWidth * 2 + 0.2}ch`;
+    if (views.includes("ascii")) tpl += ` ${this.lineWidth + 0.2}ch`;
     this.querySelector(".panel-header").style.setProperty("grid-template-columns", tpl);
     this.querySelector(".panel-body").style.setProperty("grid-template-columns", tpl);
   }

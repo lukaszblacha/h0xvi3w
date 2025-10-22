@@ -1,5 +1,5 @@
 import { CustomElement } from "../dom.js";
-import { range, setCaret } from "../utils/text.js";
+import { range, getCaret, setCaret } from "../utils/text.js";
 import { normalizeNumber, normalizeSelectionOffsets } from "../utils/numbers.js";
 
 function isRemoveAction(inputType) {
@@ -30,14 +30,17 @@ export class DataWindow extends CustomElement {
     this.selectionRange = range(this.$textNode, 0, 0);
 
     this.classList.add("window", "notranslate");
-    this.style.setProperty("width", `${this.lineWidth * this.charsPerByte}ch`);
+    this.style.setProperty("width", `${this.lineWidth * this.charsPerByte + 0.2}ch`);
     this.setAttribute("spellcheck", false);
     this.setAttribute("contenteditable", "plaintext-only");
     this.setAttribute("autocomplete", "off");
 
     this._events = [
       [document, { "selectionchange": this.onSelectionChange.bind(this) }, false],
-      [this, { "beforeinput": this.onBeforeInput.bind(this) }, false],
+      [this, {
+        "beforeinput": this.onBeforeInput.bind(this),
+        "keydown": this.onKeyDown.bind(this),
+      }, false],
     ];
   }
 
@@ -158,6 +161,38 @@ export class DataWindow extends CustomElement {
       return this.handleInsert(text, offsets);
     }
     else alert(`Unknown input type "${e.inputType}"`);
+  }
+
+  onKeyDown(e) {
+    const { editor, $textNode, charsPerByte } = this;
+    const { viewOffsetStart, lineWidth, numLines } = editor;
+
+    const keyToOffset = {
+      33: -numLines * lineWidth, // PgUp
+      34: numLines * lineWidth,  // PgDn
+      37: -1,                    // Left
+      39: 1,                     // Right
+      38: -lineWidth,            // Up
+      40: lineWidth              // Down
+    }
+
+    const offset = keyToOffset[e.which];
+    if (offset) {
+      const caretPosition = getCaret($textNode);
+      const bytesFloat = caretPosition / charsPerByte;
+      if (offset + bytesFloat > 0 && offset + bytesFloat < charsPerByte * lineWidth * numLines) return;
+
+      e.preventDefault();
+      const byteOffset = viewOffsetStart + offset + Math.floor( caretPosition / charsPerByte);
+      const subByteOffset = caretPosition % charsPerByte;
+      if (byteOffset < 0) {
+        this.setCaret(0);
+      } else if (byteOffset + (subByteOffset ? 1 : 0) > editor.buffer.length) {
+        this.setCaret(editor.buffer.length);
+      } else {
+        this.setCaret(byteOffset, subByteOffset);
+      }
+    }
   }
 
   /**
