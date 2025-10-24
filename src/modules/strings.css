@@ -3,15 +3,11 @@ hv-strings {
   min-width: 15vw;
 
   .panel-header {
-    background-color: var(--color-input-container-bg);
-
     input[type="search"] {
       flex-grow: 1;
     }
     input[type="number"] {
-      width: 90px;
-      padding-left: 1px;
-      padding-right: 0;
+      width: 60px;
     }
     input[type="checkbox"] {
       margin: 0;

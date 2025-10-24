@@ -33,7 +33,7 @@ export class Strings extends CustomElement {
             ]),
             $("label", {}, [
               $("span", {}, ["Min length"]),
-              $("input", { type: "number", name: "min-length", min: 3, max: 15, step: 1, value: 6 }),
+              $("input", { type: "number", name: "min-length", min: 3, max: 500, step: 1, value: 6 }),
             ]),
             $("input", { type: "checkbox", name: "case-sensitive", title: "Match case", label: "Aa" })
           ]),

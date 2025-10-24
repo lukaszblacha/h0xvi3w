@@ -1,8 +1,6 @@
 .panel {
   display: flex;
   flex-direction: column;
-  border: solid 1px var(--color-mild-text);
-  border-radius: 3px;
   line-height: 20px;
   font-size: 14px;
 
@@ -23,6 +21,7 @@
   }
 
   .panel-body {
+    position: relative;
     overflow: visible auto;
     flex: 1 1 0; /* must be zero for scroll behaviour */
   }
@@ -39,12 +38,12 @@
   }
 
   .panel-header {
-    border-bottom: solid 1px var(--color-mild-text);
+    border-bottom: solid 1px var(--color-mild-border);
     overflow: auto hidden;
   }
 
   .panel-footer {
-    border-top: solid 1px var(--color-mild-text);
+    border-top: solid 1px var(--color-mild-border);
   }
 
   .panel-toolbar {

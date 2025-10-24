@@ -23,6 +23,7 @@ export class Tabs extends CustomElement {
 
     this._events = [
       [this.$list, {
+        auxclick: this.onListItemAuxClick.bind(this),
         click: this.onListItemClick.bind(this),
         dragstart: this.onTabDragStart.bind(this)
       }],
@@ -110,10 +111,16 @@ export class Tabs extends CustomElement {
     this.setActiveTabIndex(this.activeTabIndex >= $children.length ? $children.length - 1 : this.activeTabIndex);
   }
 
+  onListItemAuxClick({ target }) {
+    if (target.tagName.toLowerCase() === "li") {
+      this.$container.removeChild(this.$container.children[parseInt(target.dataset.index)]);
+    }
+  }
+
   onListItemClick({ target }) {
     if (target.tagName.toLowerCase() === "li") {
       this.setActiveTabIndex(Array.from(target.parentNode.children).indexOf(target));
-    } else if (target.tagName.toLowerCase() === "span") {
+    } else if (target.classList.contains("close")) {
       this.$container.removeChild(this.$container.children[parseInt(target.parentNode.dataset.index)]);
     }
   }
