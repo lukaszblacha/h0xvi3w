@@ -1,5 +1,6 @@
-import { $, debounce, CustomElement, toCamelCase } from "../dom.js";
+import { $, debounce, smoothen, CustomElement, toCamelCase } from "../dom.js";
 import { createPanel } from "../components/panel.js";
+import { Scrollbar } from "../components/scrollbar.js";
 
 export class Strings extends CustomElement {
   static customAttributes = {
@@ -20,6 +21,7 @@ export class Strings extends CustomElement {
     this.handleInputChange = this.handleInputChange.bind(this);
     this.onMessage = this.onMessage.bind(this);
     this.render = debounce(this.render.bind(this), 100);
+    this.onResize = smoothen(this.onResize.bind(this), 100);
 
     createPanel(
       this,
@@ -40,18 +42,23 @@ export class Strings extends CustomElement {
       }
     )
 
-    this.$body = this.querySelector(".list");
+    this.$scrollbar = new Scrollbar();
+    this.$body = this.querySelector(".panel-body");
+    this.$list = this.querySelector(".list");
     this.$search = this.querySelector(`input[name="term"]`);
     this.$minLength = this.querySelector(`input[name="min-length"]`);
     this.$caseSensitive = this.querySelector(`input[name="case-sensitive"]`);
+    this.$list.parentNode.appendChild(this.$scrollbar);
 
     this._events = [
-      [this.$body, { click: this.onStringClick }],
+      [this.$list, { click: this.onStringClick }],
       [this.$search, { change: this.onSearchTermChange }],
       [this.$minLength, { change: this.handleInputChange }],
       [this.$caseSensitive, { change: this.handleInputChange }],
       [this.editor.buffer, { change: this.onBufferChange }],
-      [this.worker, { message: this.onMessage }]
+      [this.worker, { message: this.onMessage }],
+      [this.$scrollbar, { vscroll: ({ detail }) => this.$body.scrollTop = detail.position }],
+      [this.$body, { scroll: () => this.$scrollbar.position = this.$body.scrollTop }],
     ];
   }
 
@@ -59,7 +66,18 @@ export class Strings extends CustomElement {
     super.connectedCallback();
     this.$minLength.value = this.minLength;
     this.$caseSensitive.checked = this.caseSensitive;
+    this.$scrollbar.position = 0;
+
+    this.resizeObserver = new ResizeObserver(this.onResize);
+    this.resizeObserver.observe(this);
+
     this.onBufferChange();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.resizeObserver.unobserve(this);
+    this.resizeObserver = null;
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -100,12 +118,13 @@ export class Strings extends CustomElement {
 
   onMessage({ data }) {
     const { offsets, ends } = data;
+    const { $list, $scrollbar, $search, $body, caseSensitive } = this;
 
-    this.$body.innerText = "";
+    $list.innerText = "";
 
-    const query = this.caseSensitive ? this.$search.value : this.$search.value.toLowerCase();
+    const query = caseSensitive ? $search.value : $search.value.toLowerCase();
 
-    let fc = this.caseSensitive
+    let fc = caseSensitive
       ? (str) => str.includes(query)
       : (str) => str.toLowerCase().includes(query);
     if (!query) fc = () => true;
@@ -114,7 +133,7 @@ export class Strings extends CustomElement {
       const endOffset = ends[index];
       const str = this.editor.buffer.readString(offset, endOffset);
       if (fc(str)) {
-        this.$body.appendChild($(
+        $list.appendChild($(
           "div",
           { class: "string", "data-start": offset, "data-end": endOffset },
           [
@@ -123,6 +142,11 @@ export class Strings extends CustomElement {
           ]
         ));
       }
+    });
+
+    setTimeout(() => {
+      $scrollbar.containerSize = $body.clientHeight;
+      $scrollbar.containerScrollSize = $body.scrollHeight;
     });
 
     this.busy = false;
@@ -149,18 +173,14 @@ export class Strings extends CustomElement {
     });
   }
 
-  onSearchTermChange() {
-    this.render();
-  }
-
   onStringClick({ target }) {
     if (target.classList.contains("string")) {
       this.editor.setSelection(Number(target.dataset.start), Number(target.dataset.end));
     }
   }
 
-  onBufferChange(){
-    this.render();
-  }
+  onSearchTermChange() { this.render(); }
+  onResize() { this.render(); }
+  onBufferChange(){ this.render(); }
 }
 customElements.define("hv-strings", Strings);

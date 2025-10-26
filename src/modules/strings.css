@@ -17,16 +17,7 @@ hv-strings {
   }
 
   .panel-body {
-    position: relative;
-    display: flex;
-    flex-direction: column;
     padding: 0;
-    gap: 8px;
-
-    .list {
-      display: block;
-      overflow: hidden auto;
-    }
 
     .string {
       display: block;

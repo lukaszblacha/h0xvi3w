@@ -3,7 +3,7 @@ hv-split:has(hv-editor), hv-tabs:has(hv-editor) {
 }
 
 hv-editor.panel {
-  .panel-header, .panel-body {
+  .panel-header, .editor-body {
     font-family: "JetBrains Mono", monospace;
     display: grid;
     justify-content: unset;
@@ -21,9 +21,9 @@ hv-editor.panel {
     }
   }
 
-  .panel-body {
-    position: relative;
+  .editor-body {
     overflow: hidden;
+    flex-grow: 1;
 
     *::selection {
       background-color: #F005;

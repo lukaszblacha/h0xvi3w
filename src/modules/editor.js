@@ -74,10 +74,12 @@ export class HexEditor extends CustomElement {
           $("div", { class: "col-ascii hidden notranslate" }, headerText(lineWidth, 1)),
         ],
         body: [
-          $("div", { class: "col-index" }),
-          $("div", { class: "col-bin hidden" }),
-          $("div", { class: "col-hex hidden" }),
-          $("div", { class: "col-ascii hidden" }),
+          $("div", { class: "editor-body" }, [
+            $("div", { class: "col-index" }),
+            $("div", { class: "col-bin hidden" }),
+            $("div", { class: "col-hex hidden" }),
+            $("div", { class: "col-ascii hidden" }),
+          ]),
           new Scrollbar(),
         ],
         footer: [$("div"), $("div"), $("div"), $("div")],
@@ -154,7 +156,7 @@ export class HexEditor extends CustomElement {
     if (views.includes("hex")) tpl += ` ${this.lineWidth * 2 + 0.2}ch`;
     if (views.includes("ascii")) tpl += ` ${this.lineWidth + 0.2}ch`;
     this.querySelector(".panel-header").style.setProperty("grid-template-columns", tpl);
-    this.querySelector(".panel-body").style.setProperty("grid-template-columns", tpl);
+    this.$dom.$body.style.setProperty("grid-template-columns", tpl);
   }
 
   enableView(name) {
@@ -165,7 +167,7 @@ export class HexEditor extends CustomElement {
     const cfg = this.availableViews[name];
     cfg.window = this.createDataView(name);
     this.querySelector(`.panel-header .col-${name}`).classList.remove("hidden");
-    this.querySelector(`.panel-body .col-${name}`).replaceWith(cfg.window);
+    this.$dom.$body.querySelector(`.col-${name}`).replaceWith(cfg.window);
     cfg.active = true;
     cfg.window.render(buffer.slice(viewOffsetStart, viewOffsetEnd));
     this.updateSelection(selectionStartOffset, selectionEndOffset);
@@ -178,7 +180,7 @@ export class HexEditor extends CustomElement {
     const cfg = availableViews[name];
 
     this.querySelector(`.panel-header .col-${name}`).classList.add("hidden");
-    this.querySelector(`.panel-body .col-${name}`).replaceWith($("div", { class: `col-${name} hidden` }));
+    this.$dom.$body.querySelector(`.col-${name}`).replaceWith($("div", { class: `col-${name} hidden` }));
     cfg.active = false;
     delete cfg.window;
     highlight("selection", Object.values(availableViews).map(({ window }) => window?.selectionRange).filter(Boolean));
@@ -199,9 +201,9 @@ export class HexEditor extends CustomElement {
 
   get $dom() {
     const [$pos, $val, $size, $mode] = this.querySelectorAll(".panel-footer > *");
-    const $body = this.querySelector(".panel-body");
+    const $body = this.querySelector(".editor-body");
     const $index = $body.firstChild;
-    const $scrollbar = $body.querySelector("hv-scrollbar");
+    const $scrollbar = this.querySelector("hv-scrollbar");
 
     return { $pos, $val, $size, $mode, $index, $body, $scrollbar };
   }

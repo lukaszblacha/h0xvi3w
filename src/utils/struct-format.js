@@ -1,5 +1,6 @@
 export const formatMap = {
   'x': {
+    name: "padding",
     size: 1,
     write(b, o) {
       b.writeUInt8(0, o);
@@ -7,6 +8,7 @@ export const formatMap = {
     read() { return undefined; }
   },
   'c': {
+    name: "character",
     size: 1,
     write(b, o, e, v) {
       b.writeString(o, v[0]);
@@ -16,6 +18,7 @@ export const formatMap = {
     },
   },
   'b': {
+    name: "i8",
     size: 1,
     write(b, o, e, v) {
       b.writeInt8(v, o)
@@ -25,6 +28,7 @@ export const formatMap = {
     },
   },
   'B': {
+    name: "u8",
     size: 1,
     write(b, o, e, v) {
       b.writeUInt8(v, o);
@@ -34,6 +38,7 @@ export const formatMap = {
     },
   },
   '?': {
+    name: "boolean",
     size: 1,
     write(b, o, e, v) {
       b.writeUInt8(v ? 1 : 0, o)
@@ -43,6 +48,7 @@ export const formatMap = {
     },
   },
   'h': {
+    name: "i16",
     size: 2,
     write(b, o, e, v) {
       e == '<' ? b.writeInt16LE(v, o) : b.writeInt16BE(v, o);
@@ -52,6 +58,7 @@ export const formatMap = {
     },
   },
   'H': {
+    name: "u16",
     size: 2,
     write(b, o, e, v) {
       e == '<' ? b.writeUInt16LE(v, o) : b.writeUInt16BE(v, o);
@@ -61,6 +68,7 @@ export const formatMap = {
     },
   },
   'i': {
+    name: "i32",
     size: 4,
     write(b, o, e, v) {
       e == '<' ? b.writeInt32LE(v, o) : b.writeInt32BE(v, o);
@@ -70,6 +78,7 @@ export const formatMap = {
     },
   },
   'I': {
+    name: "u32",
     size: 4,
     write(b, o, e, v) {
       e == '<' ? b.writeUInt32LE(v, o) : b.writeUInt32BE(v, o);
@@ -84,6 +93,7 @@ export const formatMap = {
   //'Q': {},
   //'e': {},
   'f': {
+    name: "f64",
     size: 4,
     write(b, o, e, v) {
       e == '<' ? b.writeFloatLE(v, o) : b.writeFloatBE(v, o);
@@ -93,6 +103,7 @@ export const formatMap = {
     },
   },
   'd': {
+    name: "f128",
     size: 8,
     write(b, o, e, v) {
       e == '<' ? b.writeDoubleLE(v, o) : b.writeDoubleBE(v, o);
@@ -102,6 +113,7 @@ export const formatMap = {
     }
   },
   's': {
+    name: "string",
     size: 1,
     write(b, o, e, v) {
       b.writeString(o, v);

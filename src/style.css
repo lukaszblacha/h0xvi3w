@@ -115,7 +115,19 @@ input:hover, input:focus {
 }
 
 button, input[type="checkbox"] {
-  box-shadow: 0 1px 2px #0008;
+  font-size: 12px;
+  border-radius: 0.5lh;
+  background-color: #fafbfc20;
+  border-color: #fff1;
+  box-shadow: 0 1px 0px 1px #0002;
+  line-height: 1.5em;
+  padding: .3em 1em;
+}
+
+button:hover, input[type="checkbox"]:hover,
+button:focus, input[type="checkbox"]:focus {
+  background-color: #fafbfc30;
+  box-shadow: 0 1px 2px 1px #0007;
 }
 
 input[type="checkbox"][label]:checked:after {
