@@ -1,15 +1,14 @@
 import { $, bindAll, CustomElement, unbindAll } from "../dom.js";
 import { Split } from "./split.js";
 
-const fields = {
-  "tabs-position": { type: "string", defaultValue: "top" }
-};
-
 export class Tabs extends CustomElement {
-  static observedAttributes = Object.keys(fields);
+  static customAttributes = {
+    "tabs-position": { type: "string", defaultValue: "top" }
+  }
+  static observedAttributes = Object.keys(Tabs.customAttributes);
 
   constructor(content) {
-    super(fields);
+    super();
     this.activeTabIndex = 0;
     this.initialized = false;
     this.classList.add("tabs");
@@ -191,7 +190,7 @@ export class Tabs extends CustomElement {
         ? [new Tabs($source), this]
         : [this, new Tabs($source)];
       splitContent.forEach(el => $split.appendChild(el));
-      $split.setAttribute("orientation", ["drop-left", "drop-right"].includes(className) ? "horizontal" : "vertical");
+      $split.orientation = ["drop-left", "drop-right"].includes(className) ? "horizontal" : "vertical";
       $parent.replaceChild($split, $placeholder);
       $parent.updateChildSize($split);
     }

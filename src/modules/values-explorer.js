@@ -46,15 +46,14 @@ function formatChar(value) {
   return `"${char}" ${hex}h`;
 }
 
-const fields = {
-  "big-endian": { type: "bool", defaultValue: "true" },
-}
-
 export class ValuesExplorer extends CustomElement {
-  static observedAttributes = Object.keys(fields);
+  static customAttributes = {
+    "big-endian": { type: "bool", defaultValue: "true" },
+  };
+  static observedAttributes = Object.keys(ValuesExplorer.customAttributes);
 
   constructor(editor) {
-    super(fields);
+    super();
 
     this.editor = editor;
     this.value = [];

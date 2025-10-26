@@ -1,16 +1,15 @@
-import { $, debounce, CustomElement } from "../dom.js";
+import { $, debounce, CustomElement, toCamelCase } from "../dom.js";
 import { createPanel } from "../components/panel.js";
 
-const attributes = {
-  "min-length": { type: "number", defaultValue: 6 },
-  "case-sensitive": { type: "bool", defaultValue: "false" },
-}
-
 export class Strings extends CustomElement {
-  static observedAttributes = Object.keys(attributes);
+  static customAttributes = {
+    "min-length": { type: "number", defaultValue: 6 },
+    "case-sensitive": { type: "bool", defaultValue: "false" },
+  };
+  static observedAttributes = Object.keys(Strings.customAttributes);
 
   constructor(editor) {
-    super(attributes);
+    super();
 
     this.editor = editor;
     this.worker = new Worker("modules/strings-worker.js");
@@ -68,11 +67,15 @@ export class Strings extends CustomElement {
 
     switch (name) {
       case "min-length": {
-        this.querySelector(`input[name="${name}"]`).value = newValue;
+        this.$minLength.setAttribute("value", newValue);
         break;
       }
       case "case-sensitive": {
-        this.querySelector(`input[name="${name}"]`).checked = newValue === "true";
+        if (!["", "false"].includes(newValue)) {
+          this.$caseSensitive.setAttribute("checked", newValue);
+        } else {
+          this.$caseSensitive.removeAttribute("checked");
+        }
         break;
       }
       default: return;
@@ -81,8 +84,18 @@ export class Strings extends CustomElement {
   }
 
   handleInputChange(e) {
-    const { name, checked, type, value } = e.target;
-    this.setAttribute(name, type.toLowerCase() === "checkbox" ? String(checked) : value);
+    const { name: inputName, type } = e.target;
+    const name = toCamelCase(inputName);
+    if (name in this) {
+      switch (type) {
+        case "checkbox":
+          return this[name] = e.target.checked;
+        case "number":
+          return this[name] = e.target.valueAsNumber;
+        default:
+          this[name] = e.target.value;
+      }
+    }
   }
 
   onMessage({ data }) {

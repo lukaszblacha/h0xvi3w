@@ -42,16 +42,15 @@ const viewSettings = Object.freeze({
   }
 });
 
-const attributes = {
-  mode: { type: "string", defaultValue: "overwrite" },
-  views: { type: "string", defaultValue: "hex,ascii" },
-};
-
 export class HexEditor extends CustomElement {
-  static observedAttributes = Object.keys(attributes);
+  static customAttributes = {
+    mode: { type: "string", defaultValue: "overwrite" },
+    views: { type: "string", defaultValue: "hex,ascii" },
+  }
+  static observedAttributes = Object.keys(HexEditor.customAttributes);
 
   constructor(lineWidth = 16) {
-    super(attributes);
+    super();
 
     this.lineWidth = lineWidth;
     this.numLines = 0;
@@ -103,7 +102,7 @@ export class HexEditor extends CustomElement {
     const views = this.views.split(",");
     super.connectedCallback();
     if(views.length < 1) {
-      this.setAttribute("views", "hex,ascii");
+      this.views = "hex,ascii";
     }
 
     this.resizeObserver = new ResizeObserver(this.onResize);
@@ -188,9 +187,9 @@ export class HexEditor extends CustomElement {
   toggleView(name) {
     const views = this.views.split(",");
     if (views.includes(name)) {
-      this.setAttribute("views", views.filter((v) => v !== name).join(","));
+      this.views = views.filter((v) => v !== name).join(",");
     } else {
-      this.setAttribute("views", [...views, name].join(","));
+      this.views = [...views, name].join(",");
     }
   }
 
@@ -239,7 +238,7 @@ export class HexEditor extends CustomElement {
   }
 
   switchMode() {
-    this.setAttribute("mode", this.mode === "insert" ? "overwrite" : "insert");
+    this.mode = this.mode === "insert" ? "overwrite" : "insert";
   }
 
   setBuffer(buf) {

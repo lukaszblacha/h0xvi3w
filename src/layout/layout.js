@@ -6,7 +6,7 @@ import { Canvas } from "../modules/canvas.js";
 import { Struct } from "../modules/struct.js";
 import { HexEditor } from "../modules/editor.js";
 import { defaultLayout } from "./config.js";
-import { $ } from "../dom.js";
+import { $, toCamelCase } from "../dom.js";
 
 const componentMap = {
   "hv-tabs": Tabs,
@@ -17,6 +17,21 @@ const componentMap = {
   "hv-canvas": Canvas,
   "hv-struct": Struct
 };
+
+
+function restoreProperties(el, cfg = {}) {
+  Object.entries(el.constructor.customAttributes || {}).forEach(([attributeName, { defaultValue }]) => {
+    const key = toCamelCase(attributeName);
+    el[key] = cfg[key] ?? defaultValue;
+  });
+}
+
+function saveProperties(el) {
+  return Object.entries(el.constructor.customAttributes || {}).reduce((acc, [attributeName, { defaultValue }]) => {
+    const key = toCamelCase(attributeName);
+    return { ...acc, [key]: el[key] ?? defaultValue };
+  }, {});
+}
 
 export class Layout extends HTMLElement {
   constructor(editor) {
@@ -41,43 +56,38 @@ export class Layout extends HTMLElement {
     switch (cfg.type) {
       case "hv-split": {
         component = new Split();
-        component.setAttribute("orientation", cfg.orientation);
+        restoreProperties(component, cfg.properties);
         cfg.items?.map((item) => this.createLayoutElement(item)).forEach(el => component.appendChild(el));
         break;
       }
       case "hv-tabs": {
         component = new Tabs(cfg.items?.map((item) => this.createLayoutElement(item)));
-        component.setAttribute("tabs-position", cfg["tabs-position"]);
+        restoreProperties(component, cfg.properties);
         break;
       }
       case "hv-editor": {
         component = this.editor;
-        cfg.views && component.setAttribute("views", cfg.views);
-        cfg.mode && component.setAttribute("mode", cfg.mode);
+        restoreProperties(component, cfg.properties);
         break;
       }
       case "hv-strings": {
         component = new Strings(this.editor);
-        component.setAttribute("min-length", cfg["min-length"]);
-        component.setAttribute("case-sensitive", cfg["case-sensitive"]);
+        restoreProperties(component, cfg.properties);
         break;
       }
       case "hv-values-explorer": {
         component = new ValuesExplorer(this.editor);
-        component.setAttribute("big-endian", cfg["big-endian"]);
+        restoreProperties(component, cfg.properties);
         break;
       }
       case "hv-canvas": {
         component = new Canvas(this.editor);
-        component.setAttribute("width", cfg.width);
-        component.setAttribute("offset", cfg.offset);
-        component.setAttribute("bpp", cfg.bpp);
-        component.setAttribute("scanline", cfg.scanline);
-        component.setAttribute("limit", cfg.limit);
+        restoreProperties(component, cfg.properties);
         break;
       }
       case "hv-struct": {
         component = new Struct(this.editor);
+        restoreProperties(component, cfg.properties);
         break;
       }
       default: {
@@ -93,10 +103,10 @@ export class Layout extends HTMLElement {
   getLayoutElement(el) {
     const tagName = el.tagName.toLowerCase();
     if (tagName in componentMap) {
-      const component = (componentMap[tagName].observedAttributes || []).reduce(
-        (acc, key) => ({ ...acc, [key]: el.getAttribute(key) }),
-        { type: tagName }
-      );
+      const component = {
+        type: tagName,
+        properties: saveProperties(el),
+      };
       if (tagName === "hv-split") {
         Object.assign(component, {
           items: [...el.children].map(this.getLayoutElement).filter(Boolean),

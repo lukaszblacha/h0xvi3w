@@ -1,22 +1,21 @@
-import { $, debounce, CustomElement } from "../dom.js";
+import {$, debounce, CustomElement, toCamelCase} from "../dom.js";
 import { createPanel } from "../components/panel.js";
 
-const attributes = {
-  width: { type: "number", defaultValue: 50 },
-  offset: { type: "number", defaultValue: 0 },
-  bpp: { type: "number", defaultValue: 1 },
-  scanline: { type: "number", defaultValue: 0 },
-  limit: { type: "number", defaultValue: 0 },
-};
-
 export class Canvas extends CustomElement {
-  static observedAttributes = ["width", "offset", "bpp", "scanline", "limit"];
+  static customAttributes = {
+    width: { type: "number", defaultValue: 50 },
+    offset: { type: "number", defaultValue: 0 },
+    bpp: { type: "number", defaultValue: 1 },
+    scanline: { type: "number", defaultValue: 0 },
+    limit: { type: "number", defaultValue: 0 },
+  };
+  static observedAttributes = Object.keys(Canvas.customAttributes);
 
   /**
    * @param {HexEditor} editor
    */
   constructor(editor) {
-    super(attributes);
+    super();
     this.editor = editor;
 
     this.onPixelClick = this.onPixelClick.bind(this);
@@ -33,23 +32,23 @@ export class Canvas extends CustomElement {
         header: $("div", { class: "panel-toolbar" }, [
           $("label", {}, [
             $("span", {}, ["Offset"]),
-            $("input", { type: "number", name: "offset", min: 0, value: attributes["offset"].defaultValue })
+            $("input", { type: "number", name: "offset", min: 0 })
           ]),
           $("label", {}, [
             $("span", {}, ["Width"]),
-            $("input", { type: "number", name: "width", min: 3, value: attributes["width"].defaultValue }),
+            $("input", { type: "number", name: "width", min: 3 }),
           ]),
           $("label", {}, [
             $("span", {}, ["Bytes/pixel"]),
-            $("input", { type: "number", name: "bpp", min: 1, value: attributes["bpp"].defaultValue }),
+            $("input", { type: "number", name: "bpp", min: 1 }),
           ]),
           $("label", {}, [
             $("span", {}, ["Scanline"]),
-            $("input", { type: "number", name: "scanline", min: 0, value: attributes["scanline"].defaultValue })
+            $("input", { type: "number", name: "scanline", min: 0 })
           ]),
           $("label", {}, [
             $("span", {}, ["Limit"]),
-            $("input", { type: "number", name: "limit", min: 0, value: attributes["limit"].defaultValue })
+            $("input", { type: "number", name: "limit", min: 0 })
           ]),
         ])
       }
@@ -64,14 +63,14 @@ export class Canvas extends CustomElement {
       $canvas: offscreen,
     }, [offscreen]);
 
-    const [offsetInput, widthInput, bppInput, scanlineInput, limitInput] = this.querySelectorAll("input");
+    const [$offset, $width, $bpp, $scanline, $limit] = this.querySelectorAll("input");
     this._events = [
       [this.editor.buffer, { change: this.render }],
-      [offsetInput, { change: this.handleInputChange }],
-      [widthInput, { change: this.handleInputChange }],
-      [bppInput, { change: this.handleInputChange }],
-      [scanlineInput, { change: this.handleInputChange }],
-      [limitInput, { change: this.handleInputChange }],
+      [$offset, { change: this.handleInputChange }],
+      [$width, { change: this.handleInputChange }],
+      [$bpp, { change: this.handleInputChange }],
+      [$scanline, { change: this.handleInputChange }],
+      [$limit, { change: this.handleInputChange }],
       [this, { click: this.onPixelClick }],
       [this.worker, { message: this.onMessage }]
     ];
@@ -80,12 +79,12 @@ export class Canvas extends CustomElement {
   connectedCallback() {
     super.connectedCallback();
 
-    const [offsetInput, widthInput, bppInput, scanlineInput, limitInput] = this.querySelectorAll("input");
-    offsetInput.value = this.offset;
-    widthInput.value = this.width;
-    bppInput.value = this.bpp;
-    scanlineInput.value = this.scanline;
-    limitInput.value = this.limit;
+    const [$offset, $width, $bpp, $scanline, $limit] = this.querySelectorAll("input");
+    $offset.value = this.offset;
+    $width.value = this.width;
+    $bpp.value = this.bpp;
+    $scanline.value = this.scanline;
+    $limit.value = this.limit;
 
     this.resizeObserver = new ResizeObserver(this.onResize);
     this.resizeObserver.observe(this);
@@ -106,27 +105,27 @@ export class Canvas extends CustomElement {
   attributeChangedCallback(name, oldValue, newValue) {
     if ([undefined, null, "null", "undefined"].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
 
-    const [offsetInput, widthInput, bppInput, scanlineInput, limitInput] = this.querySelectorAll("input");
+    const [$offset, $width, $bpp, $scanline, $limit] = this.querySelectorAll("input");
 
     switch (name) {
       case "width": {
-        widthInput.value = newValue;
+        $width.setAttribute("value", newValue);
         break;
       }
       case "offset": {
-        offsetInput.value = newValue;
+        $offset.setAttribute("value", newValue);
         break;
       }
       case "bpp": {
-        bppInput.value = newValue;
+        $bpp.setAttribute("value", newValue);
         break;
       }
       case "scanline": {
-        scanlineInput.value = newValue;
+        $scanline.setAttribute("value", newValue);
         break;
       }
       case "limit": {
-        limitInput.value = newValue;
+        $limit.setAttribute("value", newValue);
         break;
       }
       default: return;
@@ -134,15 +133,22 @@ export class Canvas extends CustomElement {
     this.render();
   }
 
-  /**
-   * @param {{target: {name: string, value: string} }} event
-   */
-  handleInputChange(event) {
-    this.setAttribute(event.target.name, event.target.value);
+  handleInputChange(e) {
+    const { name: inputName, type } = e.target;
+    const name = toCamelCase(inputName);
+    if (name in this) {
+      switch (type) {
+        case "checkbox":
+          return this[name] = e.target.checked;
+        case "number":
+          return this[name] = e.target.valueAsNumber;
+        default:
+          this[name] = e.target.value;
+      }
+    }
   }
 
   onMessage() {
-    console.log(`Render done. Took ${((Date.now() - this.start) / 1000).toFixed(2)}s`);
     this.busy = false;
     if (this.queue) {
       this.render();

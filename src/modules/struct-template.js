@@ -4,7 +4,7 @@ import { createPanel } from "../components/panel.js";
 
 export class StructTemplate extends CustomElement {
   constructor(storage, name = "struct") {
-    super({});
+    super();
 
     this.storage = storage;
 

@@ -6,7 +6,7 @@ import { HVStorage } from "../utils/storage.js";
 
 export class Struct extends CustomElement {
   constructor(editor) {
-    super({});
+    super();
 
     this.editor = editor;
     this.storage = new HVStorage("hexview/structs", {});
