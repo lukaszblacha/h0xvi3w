@@ -10,22 +10,23 @@ function setup(data) {
   $canvas = data.$canvas;
 }
 
-async function render({ buffer, offset, width, bpp, scanline, containerWidth }) {
+async function render({ buffer, offset, width, bpp, scanline, containerWidth, limit }) {
   if (!$canvas) {
     console.error("trying to render but no canvas present");
     return;
   }
 
   const scale = containerWidth / width;
+  const maxOffset = limit ? Math.min(offset + limit, buffer.byteLength) : buffer.byteLength;
   $canvas.width = containerWidth;
-  $canvas.height = Math.ceil(buffer.byteLength / width) * scale;
+  $canvas.height = Math.ceil(maxOffset / width) * scale;
 
   const start = Date.now();
   const data = new Uint8Array(buffer);
 
   let index = 0;
-  const img = new ImageData(width, Math.ceil(data.byteLength / width) || 1);
-  while (offset < data.byteLength && index < img.data.length) {
+  const img = new ImageData(width, Math.ceil(maxOffset / width) || 1);
+  while (offset < maxOffset && index < img.data.length) {
     const v = avg(data.subarray(offset, offset + bpp));
     img.data[index++] = v;
     img.data[index++] = v;

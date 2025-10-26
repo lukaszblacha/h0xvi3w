@@ -6,10 +6,11 @@ const attributes = {
   offset: { type: "number", defaultValue: 0 },
   bpp: { type: "number", defaultValue: 1 },
   scanline: { type: "number", defaultValue: 0 },
+  limit: { type: "number", defaultValue: 0 },
 };
 
 export class Canvas extends CustomElement {
-  static observedAttributes = ["width", "offset", "bpp", "scanline"];
+  static observedAttributes = ["width", "offset", "bpp", "scanline", "limit"];
 
   /**
    * @param {HexEditor} editor
@@ -43,8 +44,12 @@ export class Canvas extends CustomElement {
             $("input", { type: "number", name: "bpp", min: 1, value: attributes["bpp"].defaultValue }),
           ]),
           $("label", {}, [
-            $("span", {}, ["Scanline offset"]),
+            $("span", {}, ["Scanline"]),
             $("input", { type: "number", name: "scanline", min: 0, value: attributes["scanline"].defaultValue })
+          ]),
+          $("label", {}, [
+            $("span", {}, ["Limit"]),
+            $("input", { type: "number", name: "limit", min: 0, value: attributes["limit"].defaultValue })
           ]),
         ])
       }
@@ -59,13 +64,14 @@ export class Canvas extends CustomElement {
       $canvas: offscreen,
     }, [offscreen]);
 
-    const [offsetInput, widthInput, bppInput, scanlineInput] = this.querySelectorAll("input");
+    const [offsetInput, widthInput, bppInput, scanlineInput, limitInput] = this.querySelectorAll("input");
     this._events = [
       [this.editor.buffer, { change: this.render }],
       [offsetInput, { change: this.handleInputChange }],
       [widthInput, { change: this.handleInputChange }],
       [bppInput, { change: this.handleInputChange }],
       [scanlineInput, { change: this.handleInputChange }],
+      [limitInput, { change: this.handleInputChange }],
       [this, { click: this.onPixelClick }],
       [this.worker, { message: this.onMessage }]
     ];
@@ -74,11 +80,12 @@ export class Canvas extends CustomElement {
   connectedCallback() {
     super.connectedCallback();
 
-    const [offsetInput, widthInput, bppInput, scanlineInput] = this.querySelectorAll("input");
+    const [offsetInput, widthInput, bppInput, scanlineInput, limitInput] = this.querySelectorAll("input");
     offsetInput.value = this.offset;
     widthInput.value = this.width;
     bppInput.value = this.bpp;
     scanlineInput.value = this.scanline;
+    limitInput.value = this.limit;
 
     this.resizeObserver = new ResizeObserver(this.onResize);
     this.resizeObserver.observe(this);
@@ -97,9 +104,9 @@ export class Canvas extends CustomElement {
    * @param {string} newValue
    */
   attributeChangedCallback(name, oldValue, newValue) {
-    if ([undefined, null].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
+    if ([undefined, null, "null", "undefined"].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
 
-    const [offsetInput, widthInput, bppInput, scanlineInput] = this.querySelectorAll("input");
+    const [offsetInput, widthInput, bppInput, scanlineInput, limitInput] = this.querySelectorAll("input");
 
     switch (name) {
       case "width": {
@@ -118,6 +125,10 @@ export class Canvas extends CustomElement {
         scanlineInput.value = newValue;
         break;
       }
+      case "limit": {
+        limitInput.value = newValue;
+        break;
+      }
       default: return;
     }
     this.render();
@@ -131,6 +142,7 @@ export class Canvas extends CustomElement {
   }
 
   onMessage() {
+    console.log(`Render done. Took ${((Date.now() - this.start) / 1000).toFixed(2)}s`);
     this.busy = false;
     if (this.queue) {
       this.render();
@@ -138,11 +150,11 @@ export class Canvas extends CustomElement {
   }
 
   get containerWidth() {
-    return this.querySelector(".canvas-body").clientWidth;
+    return this.querySelector(".canvas-body").offsetWidth;
   }
 
   render() {
-    const { editor, width, offset, bpp, scanline, containerWidth } = this;
+    const { editor, width, offset, bpp, scanline, limit, containerWidth } = this;
 
     if (this.busy) {
       this.queue = true;
@@ -152,6 +164,7 @@ export class Canvas extends CustomElement {
     this.queue = false;
     this.busy = true;
     const b = editor.buffer;
+    this.start = Date.now();
     this.worker.postMessage({
       action: "render",
       buffer: b.buffer.slice(b.startOffset, b.endOffset),
@@ -160,6 +173,7 @@ export class Canvas extends CustomElement {
       width,
       offset,
       scanline,
+      limit,
     });
   }
 

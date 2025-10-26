@@ -61,6 +61,15 @@ export function debounce(fn, ms) {
   };
 }
 
+export function smoothen(fn) {
+  let id;
+
+  return (...args) => {
+    cancelAnimationFrame(id);
+    id = requestAnimationFrame(() => fn(...args));
+  }
+}
+
 const toCamelCase = (name) => name.replace(
   /([-][a-z])/g,
   g => g.toUpperCase().replace('-', '')

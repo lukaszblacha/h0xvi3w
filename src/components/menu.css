@@ -1,12 +1,14 @@
 hv-menu {
   --color-menu-item-active-bg: #303132;
+  --gap: .3em;
 
   display: flex;
   align-items: flex-start;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: var(--gap);
+  padding: var(--gap) 8px;
   list-style: none;
   font-size: 13px;
+  letter-spacing: .2px;
 
   .item, .submenu {
     border: solid 1px transparent;
@@ -17,26 +19,25 @@ hv-menu {
     opacity: 0;
     pointer-events: none;
     flex-direction: column;
-    gap: 1px;
     position: absolute;
-    top: calc(100% + 2px);
+    top: calc(100% + 4px);
+    padding: var(--gap);
+    gap: var(--gap);
     left: -1px;
-    min-width: 100px;
+    min-width: 130px;
     overflow: hidden;
 
     hr {
       display: block;
-      margin: 0.5ch 1ch;
-      border: 0;
-      height: 1px;
-      background: #FFF4;
+      margin: var(--gap);
+      border: solid 1px transparent;
+      height: 0;
     }
   }
 
   .item {
-    background-color: var(--color-input-container-bg);
-    padding: .5ch 1ch;
-    line-height: 1.3em;
+    padding: .3em 1em;
+    line-height: 1.5em;
     position: relative;
     white-space: nowrap;
 
@@ -58,22 +59,31 @@ hv-menu {
 hv-menu {
   background-color: var(--color-input-container-bg);
 
-  .submenu, .item {
-    border-radius: 3px;
+  .item, .submenu {
+    border-radius: 0.5lh;
   }
 
   .item:focus, .item:hover {
     outline: none;
-    border-color: #10111280;
-    background-color: #202122;
+    background-color: #20212280;
+    border-color: #fff1;
+    box-shadow: 0 1px 0px 1px #0002 inset;
+    border-bottom-color: #fff1;
   }
 
   .submenu {
     background-color: var(--color-input-container-bg);
-    border-color: var(--color-input-container-bg);
+    border-color: #fff2;
     box-shadow: 0 1px 5px #10111280;
     transform: translateY(20px);
-    transition: transform 50ms linear, opacity 50ms linear;
+    transition: transform 200ms linear, opacity 200ms linear;
+    backdrop-filter: blur(3px);
+
+    hr {
+      background-color: transparent;
+      border-bottom-color: #0002;
+      border-top-color: #FFF2;
+    }
   }
 
   .item:focus .submenu, .submenu:hover {

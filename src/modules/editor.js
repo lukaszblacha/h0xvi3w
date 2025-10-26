@@ -1,9 +1,11 @@
-import { $, CustomElement } from "../dom.js";
+import { $, CustomElement, debounce } from "../dom.js";
 import { createPanel } from "../components/panel.js";
-import { highlight, range, setCaret } from "../utils/text.js";
+import { highlight, range } from "../utils/text.js";
 import { DataBuffer } from "../structures/buffer.js";
+import { Scrollbar } from "../components/scrollbar.js";
 import { DataWindow } from "../components/window.js";
 import { binToU8, charToU8, hexToU8, u8ToBin, u8ToChar, u8ToHex } from "../utils/converters.js";
+import { normalizeNumber, normalizeSelectionOffsets } from "../utils/numbers.js";
 
 function parseViewsAttribute(str) {
   return (str || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -19,37 +21,26 @@ const displayValue = (num) =>
 const headerText = (lineWidth, charsPerByte = 1) =>
   Array(lineWidth).fill(0).map((_, i) => i.toString(16).padEnd(charsPerByte, " ")).join("").toUpperCase();
 
-function normalizeSelectionRange(baseOffset, extentOffset, charsPerByte = 1) {
-  const start = Math.min(baseOffset, extentOffset);
-  const end = Math.max(baseOffset, extentOffset);
-  return [Math.floor(start / charsPerByte), Math.ceil(end / charsPerByte)];
-}
-
-function getViewSettings(name) {
-  switch(name) {
-    case "bin": return {
-      renderByte: u8ToBin,
-      charsPerByte: 8,
-    }
-    case "hex": return {
-      renderByte: u8ToHex,
-      charsPerByte: 2,
-    }
-    case "ascii": return {
-      renderByte: u8ToChar,
-      charsPerByte: 1,
-    }
-    default: throw new Error(`Unknown DataWindow type "${name}".`);
+const viewSettings = Object.freeze({
+  bin: {
+    renderByte: u8ToBin,
+    toByte: binToU8,
+    inputRegex: /^[01]*$/,
+    charsPerByte: 8,
+  },
+  hex: {
+    renderByte: u8ToHex,
+    toByte: hexToU8,
+    inputRegex: /^[0-9a-f]*$/,
+    charsPerByte: 2,
+  },
+  ascii: {
+    renderByte: u8ToChar,
+    toByte: charToU8,
+    inputRegex: /.*/,
+    charsPerByte: 1,
   }
-}
-
-const createDataView = (name, buffer, lineWidth) => {
-  const { charsPerByte, renderByte } = getViewSettings(name);
-  const w = new DataWindow({ buffer, renderByte });
-  w.classList.add(`col-${name}`);
-  w.style.width = `${lineWidth * charsPerByte}ch`;
-  return w;
-}
+});
 
 const attributes = {
   mode: { type: "string", defaultValue: "overwrite" },
@@ -63,11 +54,16 @@ export class HexEditor extends CustomElement {
     super(attributes);
 
     this.lineWidth = lineWidth;
+    this.numLines = 0;
+    this.characterHeight = 20; // px
+    this.viewOffsetStart = 0;
     this.fileName = "data.bin";
     this.selectionStartOffset = 0;
     this.selectionEndOffset = 0;
     this.buffer = new DataBuffer();
     this.availableViews = { bin: { active: false }, hex: { active: false }, ascii: { active: false } };
+
+    this.onResize = debounce(this.onResize.bind(this), 100);
 
     createPanel(
       this,
@@ -82,18 +78,24 @@ export class HexEditor extends CustomElement {
           $("div", { class: "col-index" }),
           $("div", { class: "col-bin hidden" }),
           $("div", { class: "col-hex hidden" }),
-          $("div", { class: "col-ascii hidden" })
+          $("div", { class: "col-ascii hidden" }),
+          new Scrollbar(),
         ],
         footer: [$("div"), $("div"), $("div"), $("div")],
       }
     );
 
+    const { $mode, $body, $scrollbar } = this.$dom;
     this._events = [
-      [this.$dom.$mode, { click: this.switchMode.bind(this) }],
+      [$mode, { click: this.switchMode.bind(this) }],
+      [$body, { wheel: $scrollbar.onWheel }],
+      [$scrollbar, { vscroll: this.onScroll.bind(this) }],
       [this, {
-        beforeinput: this.onBeforeInput.bind(this),
-        selectionchange: this.onSelectionChange.bind(this)
+        windowselectionchange: this.onWindowSelectionChange.bind(this)
       }, false],
+      [this.buffer, {
+        change: this.onBufferChange.bind(this),
+      }]
     ];
   }
 
@@ -104,6 +106,9 @@ export class HexEditor extends CustomElement {
       this.setAttribute("views", "hex,ascii");
     }
 
+    this.resizeObserver = new ResizeObserver(this.onResize);
+    this.resizeObserver.observe(this);
+
     Object.keys(this.availableViews).forEach((view) => {
       if (views.includes(view)) this.enableView(view);
       else this.disableView(view);
@@ -112,8 +117,14 @@ export class HexEditor extends CustomElement {
     updateModeLabel(this.$dom.$mode, this.mode);
   }
 
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.resizeObserver.unobserve(this);
+    this.resizeObserver = null;
+  }
+
   attributeChangedCallback(name, oldValue, newValue) {
-    if ([undefined, null].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
+    if ([undefined, null, "null", "undefined"].includes(newValue)) return this.setAttribute(name, this.fields[name].defaultValue);
 
     switch (name) {
       case "views": {
@@ -133,37 +144,45 @@ export class HexEditor extends CustomElement {
     }
   }
 
+  get viewOffsetEnd() {
+    const { viewOffsetStart, lineWidth, numLines } = this;
+    return viewOffsetStart + lineWidth * numLines;
+  }
+
   updateGridTemplate(views) {
     let tpl = "55px";
-    if (views.includes("bin")) tpl += " 128ch";
-    if (views.includes("hex")) tpl += " 32ch";
-    if (views.includes("ascii")) tpl += " 16ch";
-    this.querySelector(".panel-header").style.gridTemplateColumns = tpl;
-    this.querySelector(".panel-body").style.gridTemplateColumns = tpl;
+    if (views.includes("bin")) tpl += ` ${this.lineWidth * 8 + 0.2}ch`;
+    if (views.includes("hex")) tpl += ` ${this.lineWidth * 2 + 0.2}ch`;
+    if (views.includes("ascii")) tpl += ` ${this.lineWidth + 0.2}ch`;
+    this.querySelector(".panel-header").style.setProperty("grid-template-columns", tpl);
+    this.querySelector(".panel-body").style.setProperty("grid-template-columns", tpl);
   }
 
   enableView(name) {
     if (!(name in this.availableViews) || this.availableViews[name].active) return;
-    const cfg = this.availableViews[name];
 
-    cfg.window = createDataView(name, this.buffer, this.lineWidth);
+    const { buffer, viewOffsetStart, viewOffsetEnd, selectionStartOffset, selectionEndOffset } = this;
+
+    const cfg = this.availableViews[name];
+    cfg.window = this.createDataView(name);
     this.querySelector(`.panel-header .col-${name}`).classList.remove("hidden");
     this.querySelector(`.panel-body .col-${name}`).replaceWith(cfg.window);
     cfg.active = true;
-    cfg.window.render();
-    this.updateSelection(this.selectionStartOffset, this.selectionEndOffset);
+    cfg.window.render(buffer.slice(viewOffsetStart, viewOffsetEnd));
+    this.updateSelection(selectionStartOffset, selectionEndOffset);
     highlight("selection", Object.values(this.availableViews).map(({ window }) => window?.selectionRange).filter(Boolean));
   }
 
   disableView(name) {
-    if (!(name in this.availableViews) || !this.availableViews[name].active) return;
-    const cfg = this.availableViews[name];
+    const { availableViews } = this;
+    if (!(name in availableViews) || !availableViews[name].active) return;
+    const cfg = availableViews[name];
 
     this.querySelector(`.panel-header .col-${name}`).classList.add("hidden");
     this.querySelector(`.panel-body .col-${name}`).replaceWith($("div", { class: `col-${name} hidden` }));
     cfg.active = false;
     delete cfg.window;
-    highlight("selection", Object.values(this.availableViews).map(({ window }) => window?.selectionRange).filter(Boolean));
+    highlight("selection", Object.values(availableViews).map(({ window }) => window?.selectionRange).filter(Boolean));
   }
 
   toggleView(name) {
@@ -183,27 +202,28 @@ export class HexEditor extends CustomElement {
     const [$pos, $val, $size, $mode] = this.querySelectorAll(".panel-footer > *");
     const $body = this.querySelector(".panel-body");
     const $index = $body.firstChild;
+    const $scrollbar = $body.querySelector("hv-scrollbar");
 
-    return { $pos, $val, $size, $mode, $index, $body };
+    return { $pos, $val, $size, $mode, $index, $body, $scrollbar };
   }
 
   updateSelection(base, extent = base) {
-    const { buffer, $dom: { $pos, $val } } = this;
+    [this.selectionStartOffset, this.selectionEndOffset] = normalizeSelectionOffsets(base, extent);
 
-    this.selectionStartOffset = Math.min(base, extent);
-    this.selectionEndOffset = Math.max(base, extent);
+    const { buffer, selectionStartOffset, selectionEndOffset, $dom: { $pos, $val } } = this;
 
     const collapsed = Math.abs(base - extent) < 2;
-    $pos.innerText = `${collapsed ? "pos" : "start"}: ${displayValue(this.selectionStartOffset)}`;
-    $val.innerText = this.selectionStartOffset < buffer.length ? (
-      this.selectionEndOffset !== this.selectionStartOffset
-        ? `sel: ${displayValue(this.selectionEndOffset - this.selectionStartOffset)}`
-        : `val: ${displayValue(buffer.at(this.selectionStartOffset))}`
+    $pos.innerText = `${collapsed ? "pos" : "start"}: ${displayValue(selectionStartOffset)}`;
+    $val.innerText = selectionStartOffset < buffer.length ? (
+      selectionEndOffset !== selectionStartOffset
+        ? `sel: ${displayValue(selectionEndOffset - selectionStartOffset)}`
+        : `val: ${displayValue(buffer.at(selectionStartOffset))}`
     ) : "";
 
-    Object.entries(this.availableViews).filter(([, { active }]) => active).forEach(([name, { window }])=> {
-      const { charsPerByte } = getViewSettings(name);
-      window.setSelection(this.selectionStartOffset * charsPerByte, this.selectionEndOffset * charsPerByte);
+    Object.values(this.availableViews).forEach(({ active, window })=> {
+      if (active) {
+        window.setSelection(selectionStartOffset, selectionEndOffset);
+      }
     });
 
     this.trigger("select", {
@@ -214,117 +234,8 @@ export class HexEditor extends CustomElement {
     });
   }
 
-  normalizeInput(text, inputType, offset) {
-    const { buffer, mode } = this;
-    const activeWindow = this.availableViews[inputType].window;
-    const { charsPerByte } = activeWindow;
-    let caret = offset;
-    if (!text) return [undefined, caret];
-
-    if (inputType === "ascii") {
-      return [text.split("").map(charToU8), caret + text.length];
-    }
-
-    const options = charsPerByte === 8
-      ? { toText: u8ToBin, toByte: binToU8, inputRegex: /^[01]*$/i }
-      : { toText: u8ToHex, toByte: hexToU8, inputRegex: /^[0-9a-f]*$/i };
-
-    if (!text.match(options.inputRegex)) return [undefined, caret];
-
-    caret += text.length;
-    if (offset % charsPerByte !== 0) {
-      const firstByteOffset = Math.floor(offset / charsPerByte);
-      const byte = options.toText(buffer.at(firstByteOffset));
-      const diff = text.length;
-      text = byte.substring(0, offset % charsPerByte).concat(text);
-      offset -= diff;
-    }
-
-    if (text.length % charsPerByte !== 0) {
-      if (mode === "insert") {
-        // TODO: always overwrites the rest of currently edited byte
-        text = text.concat(new Array(charsPerByte - text.length % charsPerByte).fill('0').join(""));
-      } else {
-        const lastByteOffset = Math.floor(offset / charsPerByte) + Math.floor(text.length / charsPerByte);
-        const byte = options.toText(buffer.at(lastByteOffset));
-        text = text.concat(byte.substring(text.length % charsPerByte));
-      }
-    }
-
-    return [text.match(new RegExp(`.{${charsPerByte}}`, "g")).map(options.toByte), caret];
-  }
-
-  onBeforeInput(e) {
-    if (e.target.tagName.toLowerCase() !== "hv-window") return;
-    e.preventDefault();
-    const { baseOffset, extentOffset, baseNode: $node, extentNode } = document.getSelection();
-    if ($node !== extentNode) return;
-
-    const activeWindow = Object.values(this.availableViews).find(({active, window}) => active && window.$textNode === $node).window;
-    let [startOffset, endOffset] = normalizeSelectionRange(baseOffset, extentOffset, activeWindow.charsPerByte);
-
-    switch (e.inputType) {
-      case "insertFromDrop":
-      case "insertFromPaste":
-      case "insertText": {
-        const data = activeWindow === this.availableViews.ascii.window ? e.data : e.data?.replace(/\s+/gm, "");
-        const [chunk, caretOffset] = this.normalizeInput(data, activeWindow === this.availableViews.hex.window ? "hex" : activeWindow === this.availableViews.bin.window ? "bin" : "ascii", Math.min(baseOffset, extentOffset));
-        if (!chunk) return;
-
-        if (this.mode === "insert") {
-          this.buffer.insert(chunk, startOffset, endOffset);
-        } else {
-          if (startOffset + chunk.length > this.buffer.length) return;
-          this.buffer.set(chunk, startOffset);
-        }
-        setCaret($node, caretOffset);
-        return;
-      }
-      case "deleteByDrag":
-      case "deleteByCut":
-      case "deleteContent":
-      case "deleteContentForward":
-      case "deleteContentBackward": {
-        const direction = e.inputType.toLowerCase().includes("backward") ? -1 : 1;
-
-        if (startOffset === endOffset) {
-          if(direction < 0) {
-            startOffset--;
-          } else {
-            endOffset++;
-          }
-        }
-
-        let caretOffset = startOffset;
-        const bytesToDelete = endOffset - startOffset;
-        if (this.mode === "insert") {
-          this.buffer.delete(startOffset, bytesToDelete);
-        } else {
-          const chunk = new Uint8Array(Array(Math.max(bytesToDelete, 1)).fill(0));
-          this.buffer.set(chunk, startOffset);
-          caretOffset = direction > 0 ? endOffset : startOffset;
-        }
-        setCaret($node, caretOffset * activeWindow.charsPerByte);
-        return;
-      }
-      case "historyUndo":
-      case "historyRedo":
-      default: {
-        alert("Unknown input type", e.inputType);
-        console.error("Unknown input type", e);
-      }
-    }
-  }
-
-  onSelectionChange(e) {
-    e.stopImmediatePropagation();
-    if (e.target.tagName.toLowerCase() !== "hv-window") return;
-
-    const { focusNode, startOffset, endOffset } = e.detail;
-    const activeWindow = focusNode === this.availableViews.hex.window?.$textNode ? this.availableViews.hex.window : focusNode === this.availableViews.bin.window?.$textNode ? this.availableViews.bin.window : this.availableViews.ascii.window;
-    const [start, end] = normalizeSelectionRange(startOffset, endOffset, activeWindow.charsPerByte);
-
-    this.updateSelection(start, end);
+  onWindowSelectionChange({ detail: { startOffset, endOffset } }) {
+    this.updateSelection(startOffset, endOffset);
   }
 
   switchMode() {
@@ -332,26 +243,47 @@ export class HexEditor extends CustomElement {
   }
 
   setBuffer(buf) {
-    const { buffer, $dom: { $size, $index } } = this;
+    const { buffer, $dom: { $size } } = this;
     buffer.from(buf);
 
     $size.innerText = `size: ${displayValue(buffer.length)}`;
+    this.renderOffsets();
+    this.trigger("load", { buffer: buffer.getBuffer() });
+    this.setSelection(0);
+  }
 
-    $index.innerText = new Array(Math.ceil(buffer.length / this.lineWidth)).fill(0)
-      .map((_, i) => (i * this.lineWidth)
-        .toString(16)
-        .padStart(6, 0))
-      .join("\n");
+  onBufferChange() {
+    const { buffer, numLines, lineWidth, viewOffsetStart, viewOffsetEnd, characterHeight, $dom } = this;
+    $dom.$size.innerText = `size: ${displayValue(buffer.length)}`;
 
-      this.trigger("load", { buffer: buffer.getBuffer() });
+    Object.values(this.availableViews).forEach(({ active, window }) => {
+      if (active) {
+        window.render(buffer.slice(viewOffsetStart, viewOffsetEnd));
+      }
+    });
 
-      Object.values(this.availableViews).filter(({ active }) => active).forEach(({ window }) => window.render());
-      this.setSelection(0);
+    $dom.$scrollbar.containerScrollSize = Math.ceil(buffer.length / lineWidth) * characterHeight;
+    $dom.$scrollbar.containerSize = numLines * characterHeight;
+  }
+
+  onResize() {
+    const { characterHeight, numLines, $dom } = this;
+    this.numLines = Math.floor($dom.$body.offsetHeight / characterHeight);
+    if (this.numLines !== numLines) {
+      $dom.$scrollbar.containerSize = numLines * characterHeight;
+      this.onBufferChange();
+      this.$dom.$scrollbar.render();
+    }
   }
 
   setSelection(start, end = start) {
-    const { $body } = this.$dom;
-    $body.scrollTop = Math.floor(start / this.lineWidth) * 20;
+    const { viewOffsetEnd } = this;
+    const [byteOffsetStart, byteOffsetEnd] = normalizeSelectionOffsets(start, end);
+    if (byteOffsetEnd > viewOffsetEnd) {
+      this.scrollIntoView(byteOffsetEnd);
+    } else {
+      this.scrollIntoView(byteOffsetStart);
+    }
     this.updateSelection(start, end);
   }
 
@@ -365,6 +297,54 @@ export class HexEditor extends CustomElement {
     Object.entries(groups).forEach(([name, ranges]) => {
       highlight(name, ranges);
     })
+  }
+
+  onScroll({ detail: { position } }) {
+    const line = Math.floor(position / this.characterHeight);
+    this.scrollToLine(line);
+  }
+
+  scrollToLine(line) {
+    const { buffer, lineWidth, characterHeight, viewOffsetStart, numLines } = this;
+    const maxLine = Math.max(0, Math.ceil(buffer.length / lineWidth) - numLines);
+    line = normalizeNumber(line, 0, maxLine);
+    if (line * lineWidth !== viewOffsetStart) {
+      this.viewOffsetStart = line * lineWidth;
+      this.onBufferChange();
+      this.renderOffsets();
+      this.$dom.$scrollbar.position = line * characterHeight;
+    }
+  }
+
+  scrollIntoView(pos) {
+    const { buffer, lineWidth, numLines, viewOffsetStart } = this;
+    const windowSize = lineWidth * numLines;
+    pos = normalizeNumber(pos, 0, buffer.length);
+
+    if (pos < viewOffsetStart) {
+      this.scrollToLine(Math.floor(pos / lineWidth));
+    } else if (pos >= viewOffsetStart + windowSize) {
+      const line = Math.ceil(pos / lineWidth) - numLines;
+      this.scrollToLine(line);
+    }
+  }
+
+  renderOffsets() {
+    const { lineWidth, viewOffsetStart, numLines } = this;
+
+    this.$dom.$index.innerText = new Array(numLines).fill(0)
+      .map((_, i) => (viewOffsetStart + i * lineWidth)
+        .toString(16)
+      )
+      .join("\n");
+  }
+
+  createDataView(name) {
+    const settings = viewSettings[name];
+    if (!settings) throw new Error(`Unknown DataWindow type "${name}".`)
+    const w = new DataWindow({ ...settings, editor: this });
+    w.classList.add(`col-${name}`);
+    return w;
   }
 
   openFile(buf, name) {

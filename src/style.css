@@ -2,6 +2,8 @@
 @import url("highlights.css");
 @import url("components/menu.css");
 @import url("components/panel.css");
+@import url("components/scrollbar.css");
+@import url("components/window.css");
 @import url("modules/editor.css");
 @import url("modules/strings.css");
 @import url("modules/values-explorer.css");
@@ -18,13 +20,15 @@ html {
 }
 
 body {
+  font-family: "Lato", "Helvetica Neue", Helvetica, sans-serif;
   background-color: #212223;
   color: #cccdce;
   user-select: none;
 
   --color-mild-text: #545556;
   --cell-hover-background: #dddedf;
-  --color-input-container-bg: #343536;
+  --color-input-container-bg: #343536aa;
+  --color-accent: #FFA50080;
 }
 
 #root {
@@ -38,6 +42,9 @@ body {
 
 *, *:before, *:after {
   box-sizing: border-box;
+}
+
+input {
   font-family: "JetBrains Mono", monospace !important;
 }
 
@@ -109,6 +116,7 @@ button, input[type="checkbox"] {
 input[type="checkbox"][label]:checked:after {
   background-color: #202122;
   box-shadow: 0 -1px 2px #0008 inset;
+  border-radius: inherit;
 }
 
 label {
@@ -117,16 +125,20 @@ label {
 
   span {
     position: absolute;
-    left: 5px;
-    top: 0;
+    left: 2px;
+    top: -7px;
     z-index: 1;
-    transform: translateY(-50%);
     white-space: nowrap;
+    background: #212223;
     color: #aaa;
     font-size: 9px;
     text-transform: lowercase;
-    text-shadow: 0 1px 1px #000;
+    text-shadow: 0 1px 1px #0006;
     pointer-events: none;
+    border-radius: 3px;
+    padding: 0 0.4em;
+    line-height: 1.2;
+    border-top: solid 1px #000B;
   }
 }
 
@@ -159,7 +171,7 @@ td:first-child {
 }
 
 tr:hover td {
-  background-color: #FFA50080;
+  background-color: var(--color-accent);
 }
 
 tr:nth-child(2n) {

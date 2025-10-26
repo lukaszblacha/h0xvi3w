@@ -15,6 +15,14 @@ export function setSelection($node, startOffset, endOffset = startOffset) {
   s.addRange(range($node, startOffset, endOffset));
 }
 
+export function getCaret($node) {
+  const s = document.getSelection();
+  if (s.focusNode === $node) {
+    return s.focusOffset;
+  }
+  return null;
+}
+
 export function replaceInText($node, replacement, startOffset, endOffset = startOffset + replacement.length) {
   $node.data = $node.data.substring(0, startOffset)
     .concat(replacement)
