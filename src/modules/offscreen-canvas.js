@@ -19,7 +19,7 @@ async function render({ buffer, offset, width, bpp, scanline, containerWidth, li
   const scale = containerWidth / width;
   const maxOffset = limit ? Math.min(offset + limit, buffer.byteLength) : buffer.byteLength;
   $canvas.width = containerWidth;
-  $canvas.height = Math.ceil(maxOffset / width) * scale;
+  $canvas.height = Math.ceil((maxOffset - offset) / width) * scale;
 
   const start = Date.now();
   const data = new Uint8Array(buffer);
