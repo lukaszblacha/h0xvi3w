@@ -2,15 +2,14 @@ import { CustomElement, $, bindAll, smoothen } from "../dom.js";
 
 export const isDivider = ($el) => $el.classList.contains("divider");
 
-const fields = {
-  orientation: { type: "string", defaultValue: "horizontal" },
-};
-
 export class Split extends CustomElement {
-  static observedAttributes = ["orientation"];
+  static customAttributes = {
+    orientation: { type: "string", defaultValue: "horizontal" },
+  };
+  static observedAttributes = Object.keys(Split.customAttributes);
 
   constructor() {
-    super(fields);
+    super();
     this.classList.add("split");
 
 

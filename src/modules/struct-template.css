@@ -1,6 +1,4 @@
 hv-struct-template.panel {
-    box-shadow: 0 0 10px #000;
-
     .format {
       width: -webkit-fill-available;
       flex-grow: 1;

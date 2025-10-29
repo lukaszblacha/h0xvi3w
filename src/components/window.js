@@ -16,7 +16,7 @@ function getInputDirection(inputType) {
 
 export class DataWindow extends CustomElement {
   constructor({ editor, renderByte, toByte, inputRegex, charsPerByte } = {}) {
-    super({});
+    super();
 
     this.editor = editor;
     this.renderByte = renderByte;

@@ -1,10 +1,11 @@
 import { $, CustomElement } from "../dom.js";
 import { packer } from "../utils/packer.js";
 import { createPanel } from "../components/panel.js";
+import { formatMap } from "../utils/struct-format.js";
 
 export class StructTemplate extends CustomElement {
   constructor(storage, name = "struct") {
-    super({});
+    super();
 
     this.storage = storage;
 
@@ -156,7 +157,7 @@ export class StructTemplate extends CustomElement {
       tokens.forEach((token, index) => {
         $table.appendChild($("tr", {}, [
           $("td", {}, $("input", { value: spec[index] })),
-          $("td", { class: "right" }, token.char),
+          $("td", { class: "right" }, formatMap[token.char].name),
           $("td", { class: "right" }, String(token.offset)),
           $("td", { class: "right" }, String(token.length)),
           $("td", { class: "right" }, [`${token.size * token.length}B`]),

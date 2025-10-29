@@ -52,7 +52,7 @@ export function writeInt(buffer, offset, bits, signed, bigEndian, _value) {
   buffer.set(chunk, offset);
 }
 
-export const MAX_BUFFER_SIZE = 1024 * 1024 * 10;
+export const MAX_BUFFER_SIZE = 1024 * 1024 * 100;
 
 export class DataBuffer extends EventTarget {
   constructor(data = new Uint8Array(0), startOffset = 0, endOffset = data.length, capacity = MAX_BUFFER_SIZE) {

@@ -1,47 +1,45 @@
 export const defaultLayout = {
   "type": "hv-split",
-  "orientation": "vertical",
+  "properties": {
+    "orientation": "vertical",
+  },
   "items": [
     {
       "type": "hv-split",
-      "orientation": "horizontal",
+      "properties": {
+        "orientation": "horizontal",
+      },
       "items": [
         {
           "type": "hv-tabs",
-          "tabs-position": "top",
           "items": [
             {
-              "type": "hv-editor",
-              "views": "hex,ascii",
-              "mode": "overwrite"
+              "type": "hv-editor"
             }
           ]
         },
         {
           "type": "hv-split",
-          "orientation": "vertical",
+          "properties": {
+            "orientation": "vertical",
+          },
           "items": [
             {
               "type": "hv-tabs",
-              "tabs-position": "top",
               "items": [
                 {
-                  "type": "hv-values-explorer",
-                  "big-endian": "false"
+                  "type": "hv-values-explorer"
                 }
               ]
             },
             {
               "type": "hv-tabs",
-              "tabs-position": "top",
+              "properties": {
+                "tabsPosition": "top",
+              },
               "items": [
                 {
-                  "type": "hv-canvas",
-                  "width": 50,
-                  "offset": 0,
-                  "bpp": 1,
-                  "scanline": 0,
-                  "limit": 0,
+                  "type": "hv-canvas"
                 }
               ]
             }
@@ -51,12 +49,12 @@ export const defaultLayout = {
     },
     {
       "type": "hv-tabs",
-      "tabs-position": "bottom",
+      "properties": {
+        "tabsPosition": "bottom"
+      },
       "items": [
         {
-          "type": "hv-strings",
-          "min-length": "6",
-          "case-sensitive": "false"
+          "type": "hv-strings"
         }
       ]
     }

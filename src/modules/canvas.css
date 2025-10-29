@@ -4,18 +4,7 @@ hv-split[orientation="vertical"]:has(hv-canvas) hv-tabs:has(hv-canvas) {
 
 hv-canvas.panel {
   .panel-body {
-    display: flex;
-    flex-direction: column;
     padding: 0;
-    gap: 8px;
-    align-items: center;
-    overflow: hidden;
-  }
-
-  .canvas-body {
-    width: 100%;
-    overflow: hidden auto;
-    height: 100%;
   }
 
   canvas {
@@ -23,12 +12,10 @@ hv-canvas.panel {
   }
 
   .panel-header {
-    background-color: var(--color-input-container-bg);
     color: inherit;
 
     input[type="number"] {
       width: 60px;
-      line-height: 1em;
     }
   }
 }

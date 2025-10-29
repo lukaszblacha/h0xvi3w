@@ -1,13 +1,6 @@
 import { $, bindAll, CustomElement, smoothen } from "../dom.js";
 import { normalizeNumber, } from "../utils/numbers.js";
 
-const attributes = {
-  position: { type: "number", defaultValue: 0 },
-  containerScrollSize: { type: "number", defaultValue: 1 },
-  containerSize: { type: "number", defaultValue: 1 },
-  orientation: { type: "string", defaultValue: "vertical" },
-};
-
 const measureTools = (orientation) => ({
   getSize: (el) => orientation === "horizontal" ? el.offsetWidth : el.offsetHeight,
   getOffset: (el) => el.getBoundingClientRect()[orientation === "horizontal" ? "x" : "y"],
@@ -15,11 +8,16 @@ const measureTools = (orientation) => ({
 });
 
 export class Scrollbar extends CustomElement {
-  static observedAttributes = Object.keys(attributes);
+  static customAttributes = {
+    position: { type: "number", defaultValue: 0 },
+    containerScrollSize: { type: "number", defaultValue: 1 },
+    containerSize: { type: "number", defaultValue: 1 },
+    orientation: { type: "string", defaultValue: "vertical" },
+  };
+  static observedAttributes = Object.keys(Scrollbar.customAttributes);
 
-  constructor(orientation) {
-    super(attributes);
-    this.orientation = orientation;
+  constructor() {
+    super();
 
     this.$handle = $("div", { class: "scrollbar-handle" });
     this.appendChild(this.$handle);

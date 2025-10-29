@@ -21,7 +21,7 @@ const toMenuItems = (items) => {
 
 export class MainMenu extends CustomElement {
   constructor() {
-    super({});
+    super();
 
     this._events = [
       [this, { click: this.onClick.bind(this) }]

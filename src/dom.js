@@ -21,11 +21,6 @@ export const $ = (tag, attributes = {}, content = []) => {
 
 export const cn = (...args) => args.filter(Boolean).join(" ");
 
-const parseAttribute = (obj, name, defaultValue) => {
-  const attr = obj.getAttribute(name);
-  return [null, "undefined"].includes(attr) ? defaultValue : attr;
-}
-
 export const bindAll = ($node, events = {}, passive = true) => {
   Object.entries(events).forEach(([name, handlers = []]) => {
     if (typeof handlers === "function") handlers = [handlers];
@@ -70,32 +65,70 @@ export function smoothen(fn) {
   }
 }
 
-const toCamelCase = (name) => name.replace(
+export const toCamelCase = (str) => str.replace(
   /([-][a-z])/g,
   g => g.toUpperCase().replace('-', '')
 );
 
+export const toKebabCase = (str) => str.replace(/[A-Z]+(?![a-z])|[A-Z]/g, (char, ofs) => ofs ? "-" : "" + char.toLowerCase());
+
+const prefix = "_internal_";
+
 export class CustomElement extends HTMLElement {
-  constructor(fields) {
+  constructor() {
     super();
 
-    this.fields = fields;
+    const fields = this.constructor.customAttributes || {};
+
+    Object.defineProperty(this, "getInternalValue", {
+      configurable: false,
+      enumerable: false,
+      value: (name) => {
+        return this[`${prefix}${toCamelCase(name)}`];
+      }
+    });
+
+    Object.defineProperty(this, "setInternalValue", {
+      configurable: false,
+      enumerable: false,
+      value: (name, value) => {
+        this[`${prefix}${toCamelCase(name)}`] = value;
+      }
+    });
 
     Object.entries(fields).forEach(([name, { type, defaultValue }]) => {
+      Object.defineProperty(this, `${prefix}${toCamelCase(name)}`, {
+        configurable: false,
+        enumerable: false,
+        writable: true,
+        value: defaultValue,
+      });
+
       Object.defineProperty(this, toCamelCase(name), {
         configurable: false,
         enumerable: true,
         get() {
-          const attr = parseAttribute(this, name, defaultValue);
-          switch (type) {
-            case "number": return parseInt(attr, 10);
-            case "float": return parseFloat(attr);
-            case "bool": return attr !== "false";
-            default: return attr;
-          }
+          return this.getInternalValue(name);
         },
         set(value) {
-          this.setAttribute(name, value);
+          let internalValue;
+          switch (type) {
+            case "number": {
+              internalValue = parseInt(value, 10);
+              break;
+            }
+            case "float": {
+              internalValue = parseFloat(value);
+              break;
+            }
+            case "bool": {
+              internalValue = ![0, false, "false", undefined, null].includes(value);
+              break;
+            }
+            default: internalValue = value;
+          }
+          this.setInternalValue(name, internalValue);
+          this.setAttribute(toKebabCase(name), internalValue);
         }
       })
     });

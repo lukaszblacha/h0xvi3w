@@ -1,15 +1,14 @@
 import { $, bindAll, CustomElement, unbindAll } from "../dom.js";
 import { Split } from "./split.js";
 
-const fields = {
-  "tabs-position": { type: "string", defaultValue: "top" }
-};
-
 export class Tabs extends CustomElement {
-  static observedAttributes = Object.keys(fields);
+  static customAttributes = {
+    "tabs-position": { type: "string", defaultValue: "top" }
+  }
+  static observedAttributes = Object.keys(Tabs.customAttributes);
 
   constructor(content) {
-    super(fields);
+    super();
     this.activeTabIndex = 0;
     this.initialized = false;
     this.classList.add("tabs");
@@ -23,6 +22,7 @@ export class Tabs extends CustomElement {
 
     this._events = [
       [this.$list, {
+        auxclick: this.onListItemAuxClick.bind(this),
         click: this.onListItemClick.bind(this),
         dragstart: this.onTabDragStart.bind(this)
       }],
@@ -110,10 +110,16 @@ export class Tabs extends CustomElement {
     this.setActiveTabIndex(this.activeTabIndex >= $children.length ? $children.length - 1 : this.activeTabIndex);
   }
 
+  onListItemAuxClick({ target }) {
+    if (target.tagName.toLowerCase() === "li") {
+      this.$container.removeChild(this.$container.children[parseInt(target.dataset.index)]);
+    }
+  }
+
   onListItemClick({ target }) {
     if (target.tagName.toLowerCase() === "li") {
       this.setActiveTabIndex(Array.from(target.parentNode.children).indexOf(target));
-    } else if (target.tagName.toLowerCase() === "span") {
+    } else if (target.classList.contains("close")) {
       this.$container.removeChild(this.$container.children[parseInt(target.parentNode.dataset.index)]);
     }
   }
@@ -184,7 +190,7 @@ export class Tabs extends CustomElement {
         ? [new Tabs($source), this]
         : [this, new Tabs($source)];
       splitContent.forEach(el => $split.appendChild(el));
-      $split.setAttribute("orientation", ["drop-left", "drop-right"].includes(className) ? "horizontal" : "vertical");
+      $split.orientation = ["drop-left", "drop-right"].includes(className) ? "horizontal" : "vertical";
       $parent.replaceChild($split, $placeholder);
       $parent.updateChildSize($split);
     }

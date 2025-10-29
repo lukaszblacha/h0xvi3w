@@ -19,9 +19,8 @@ async function render({ buffer, offset, width, bpp, scanline, containerWidth, li
   const scale = containerWidth / width;
   const maxOffset = limit ? Math.min(offset + limit, buffer.byteLength) : buffer.byteLength;
   $canvas.width = containerWidth;
-  $canvas.height = Math.ceil(maxOffset / width) * scale;
+  $canvas.height = Math.ceil((maxOffset - offset) / width) * scale;
 
-  const start = Date.now();
   const data = new Uint8Array(buffer);
 
   let index = 0;
@@ -43,7 +42,6 @@ async function render({ buffer, offset, width, bpp, scanline, containerWidth, li
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, $canvas.width, $canvas.height);
   ctx.drawImage(await createImageBitmap(img), 0, 0, img.width, img.height, 0, 0, $canvas.width, $canvas.height);
-  console.log(`Canvas rendered in ${((Date.now() - start) / 1000).toFixed(2)}s`);
 
   self.postMessage(data);
 }

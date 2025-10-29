@@ -6,7 +6,7 @@ import { HVStorage } from "../utils/storage.js";
 
 export class Struct extends CustomElement {
   constructor(editor) {
-    super({});
+    super();
 
     this.editor = editor;
     this.storage = new HVStorage("hexview/structs", {});
@@ -19,23 +19,25 @@ export class Struct extends CustomElement {
     createPanel(
       this,
       { label: "Structures", disposable: true }, {
-      body: [
-        $("div", { class: "panel-toolbar" }, [
-          $("label", {}, [
-            $("span", {}, ["Offset"]),
-            $("input", { type: "number", name: "offset", min: 0, value: 0 }),
+        header: [
+          $("div", { class: "panel-toolbar" }, [
+            $("label", {}, [
+              $("span", {}, ["Offset"]),
+              $("input", { type: "number", name: "offset", min: 0, value: 0 }),
+            ]),
+            $("label", {}, [
+              $("span", {}, ["Template"]),
+              $("select", { name: "template" }),
+            ]),
+            $("button", { name: "edit", title: "Edit" }, "✎"),
+            $("div", { class: "spacer" }),
+            $("button", { name: "parse", title: "Parse" }, "▶"),
           ]),
-          $("label", {}, [
-            $("span", {}, ["Template"]),
-            $("select", { name: "template" }),
-          ]),
-          $("button", { name: "edit", title: "Edit" }, "✎"),
-          $("div", { class: "spacer" }),
-          $("button", { name: "parse", title: "Parse" }, "▶"),
-        ]),
-        $("div", { class: "dialog" }),
-        $("table", { class: "result" }),
-      ],
+        ],
+        body: [
+          $("div", { class: "dialog" }),
+          $("table", { class: "result" }),
+        ],
     });
 
     this._events = [
